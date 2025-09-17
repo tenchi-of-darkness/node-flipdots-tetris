@@ -21,8 +21,8 @@ export const executeGameLogic = ({deltaTime, elapsedTime}) => {
     console.log(timeAccumulate);
     console.log(CurrentPieceData);
 
-    if(timeAccumulate > 30){
-        timeAccumulate -= 30;
+    if(timeAccumulate > 5){
+        timeAccumulate -= 5;
         tetrisTime()
     }
 
@@ -34,16 +34,26 @@ export const executeGameLogic = ({deltaTime, elapsedTime}) => {
 }
 
 const placePiece = (ctx, boardX, pieceParts, placedPieces) => {
-    if(CurrentPieceData.y && PlacedBlocks >= 27){
-        placedPieces.add;
-    }
 
 }
 
 const tetrisTime = () => {
+    let shouldStop = false;
     console.log("EverySecond")
 
-    CurrentPieceData.y = CurrentPieceData.y + 1;
+    for (let i = 0; i < CurrentPiece[CurrentPieceData.rotation].length; i++) {
+        if (CurrentPiece[CurrentPieceData.rotation][i].y + CurrentPieceData.y > 25){
+            shouldStop = true;
+        }
+    }
 
+    if(!shouldStop){
+        CurrentPieceData.y = CurrentPieceData.y + 1;
+    }
+
+
+    // placedPieces.push(CurrentPiece[CurrentPieceData.rotation].map(part => {
+    //     return {x: part.x, y: part.y};
+    // }));
 
 }
