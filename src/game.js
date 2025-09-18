@@ -1,18 +1,9 @@
 import Pieces from '../src/pieces.js'
 
-// let GameOver = false;
-// var score = 0;
 let CurrentPiece = [];
 let CurrentPieceData = {x: 4, y: 0, rotation: 0}
 let NextPiece = [];
-// let NextPiece = { type, rotation, piece: Pieces[randomType] }
 let PlacedBlocks = [{x: 1, y: 26}, {x: 2, y: 26}, {x: 3, y: 26}, {x: 4, y: 26} ];
-const placedPieces = [];
-
-// export const onGameStart = () => {
-//     CurrentPiece = Pieces.Z
-//     NextPiece = Pieces.Z
-// }
 
 export const onGameStart = () => {
     const first = getRandomPiece();
@@ -25,15 +16,14 @@ export const onGameStart = () => {
     NextPiece = Pieces[next.type];
 };
 
-// const spawnNextPiece = () => {
-//     const next = getRandomPiece();
-//
-//     CurrentPiece = NextPiece;
-//     CurrentPieceData = { x: 4, y: 0, rotation: 0, type: "?" };
-//     // ^ rotation will start from 0 (or you could carry NextPiece's stored rotation)
-//
-//     NextPiece = next.piece;
-// };
+const spawnNextPiece = () => {
+    const random = getRandomPiece();
+
+    CurrentPiece = NextPiece;
+    CurrentPieceData = { x: 4, y: 0, rotation: random.rotation };
+
+    NextPiece = Pieces[random.type];
+};
 
 
 let timeAccumulate = 0;
@@ -43,9 +33,10 @@ export const executeGameLogic = ({deltaTime, elapsedTime}) => {
 
     console.log(timeAccumulate);
     console.log(CurrentPieceData);
+    console.log(PlacedBlocks);
 
-    if(timeAccumulate > 30){
-        timeAccumulate -= 30;
+    if(timeAccumulate > 5){
+        timeAccumulate -= 5;
         tetrisTime()
     }
 
@@ -102,19 +93,29 @@ const tetrisTime = () => {
     let shouldStop = false;
     console.log("EverySecond")
 
+
     for (let i = 0; i < CurrentPiece[CurrentPieceData.rotation].length; i++) {
-        if (CurrentPiece[CurrentPieceData.rotation][i].y + CurrentPieceData.y > 25){
+        const yCurrent = CurrentPiece[CurrentPieceData.rotation][i].y;
+        const xCurrent = CurrentPiece[CurrentPieceData.rotation][i].x;
+        if (yCurrent + CurrentPieceData.y > 25){
             shouldStop = true;
+            break;
+        }
+        for (let j = 0; j < PlacedBlocks.length; j++) {
+            const block = PlacedBlocks[j];
+            if (yCurrent + CurrentPieceData.y +1 === block.y && xCurrent + CurrentPieceData.x === block.x) {
+                shouldStop = true;
+                break;
+            }
         }
     }
 
     if(!shouldStop){
         CurrentPieceData.y = CurrentPieceData.y + 1;
+    }else{
+        PlacedBlocks.push(...CurrentPiece[CurrentPieceData.rotation].map(part => {
+            return {x: part.x + CurrentPieceData.x, y: part.y + CurrentPieceData.y};
+        }));
+        spawnNextPiece()
     }
-
-
-    // placedPieces.push(CurrentPiece[CurrentPieceData.rotation].map(part => {
-    //     return {x: part.x, y: part.y};
-    // }));
-
 }
