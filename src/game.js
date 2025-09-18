@@ -5,22 +5,25 @@ import Pieces from '../src/pieces.js'
 let CurrentPiece = [];
 let CurrentPieceData = {x: 4, y: 0, rotation: 0}
 let NextPiece = [];
+// let NextPiece = { type, rotation, piece: Pieces[randomType] }
 let PlacedBlocks = [{x: 1, y: 26}, {x: 2, y: 26}, {x: 3, y: 26}, {x: 4, y: 26} ];
 const placedPieces = [];
 
-export const onGameStart = () => {
-    CurrentPiece = Pieces.Z
-    NextPiece = Pieces.Z
-}
-
 // export const onGameStart = () => {
-//     const first = getRandomPiece();
-//     const next = getRandomPiece();
-//
-//     CurrentPiece = first.piece;
-//     CurrentPieceData = { x: 4, y: 0, rotation: first.rotation, type: first.type };
-//     NextPiece = next.piece;
-// };
+//     CurrentPiece = Pieces.Z
+//     NextPiece = Pieces.Z
+// }
+
+export const onGameStart = () => {
+    const first = getRandomPiece();
+    const next = getRandomPiece();
+
+
+
+    CurrentPiece = Pieces[first.type];
+    CurrentPieceData = { x: 4, y: 0, rotation: first.rotation};
+    NextPiece = Pieces[next.type];
+};
 
 // const spawnNextPiece = () => {
 //     const next = getRandomPiece();
@@ -32,7 +35,6 @@ export const onGameStart = () => {
 //     NextPiece = next.piece;
 // };
 
-//let NextPiece = { type, rotation, piece: Pieces[type] }
 
 let timeAccumulate = 0;
 
@@ -58,9 +60,9 @@ const userInput = (event) => {
     const arrows = { left: 37, up: 38, right: 39, down: 40};
     const actions = {
         [arrows.left]:  'moveLeft',
-        [arrows.up]:    'rotate',
+        [arrows.up]:    'moveDownSlightlyFaster',
         [arrows.right]: 'moveRight',
-        [arrows.down]:  'moveDown'
+        [arrows.down]:  'moveDownFast'
     }
     if (actions[event.keyCode] !== undefined){ // ignore unmapped keys
         this.field.handle(actions[event.keyCode]);
@@ -79,7 +81,7 @@ const moveDown = () => {
     this.y += 1;
 }
 
-const getRandomPosition = () => {
+const getRandomPiece = () => {
     const pieceTypes = Object.keys(Pieces);
 
     const randomType = Math.floor(Math.random() * pieceTypes.length);
@@ -87,9 +89,8 @@ const getRandomPosition = () => {
     const randomRotation = Math.floor(Math.random()*4);
 
     return{
-        type: randomType,
+        type: pieceTypes[randomType],
         rotation: randomRotation,
-        piece: Pieces[randomType],
     }
 }
 

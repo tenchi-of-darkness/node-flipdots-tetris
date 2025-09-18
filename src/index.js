@@ -5,7 +5,6 @@ import path from "node:path";
 import {FPS, LAYOUT} from "./settings.js";
 import {Display} from "@owowagency/flipdot-emu";
 import "./preview.js";
-import {Pieces} from "./pieces.js";
 import {executeGameLogic, onGameStart} from "./game.js";
 
 const IS_DEV = process.argv.includes("--dev");
