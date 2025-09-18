@@ -13,6 +13,27 @@ export const onGameStart = () => {
     NextPiece = Pieces.Z
 }
 
+// export const onGameStart = () => {
+//     const first = getRandomPiece();
+//     const next = getRandomPiece();
+//
+//     CurrentPiece = first.piece;
+//     CurrentPieceData = { x: 4, y: 0, rotation: first.rotation, type: first.type };
+//     NextPiece = next.piece;
+// };
+
+// const spawnNextPiece = () => {
+//     const next = getRandomPiece();
+//
+//     CurrentPiece = NextPiece;
+//     CurrentPieceData = { x: 4, y: 0, rotation: 0, type: "?" };
+//     // ^ rotation will start from 0 (or you could carry NextPiece's stored rotation)
+//
+//     NextPiece = next.piece;
+// };
+
+//let NextPiece = { type, rotation, piece: Pieces[type] }
+
 let timeAccumulate = 0;
 
 export const executeGameLogic = ({deltaTime, elapsedTime}) => {
@@ -21,8 +42,8 @@ export const executeGameLogic = ({deltaTime, elapsedTime}) => {
     console.log(timeAccumulate);
     console.log(CurrentPieceData);
 
-    if(timeAccumulate > 5){
-        timeAccumulate -= 5;
+    if(timeAccumulate > 30){
+        timeAccumulate -= 30;
         tetrisTime()
     }
 
@@ -30,6 +51,45 @@ export const executeGameLogic = ({deltaTime, elapsedTime}) => {
         currentPiece: {x: CurrentPieceData.x, y: CurrentPieceData.y, rotation: CurrentPieceData.rotation, piece: CurrentPiece},
         nextPiece: {piece: NextPiece},
         blockGrid: PlacedBlocks,
+    }
+}
+
+const userInput = (event) => {
+    const arrows = { left: 37, up: 38, right: 39, down: 40};
+    const actions = {
+        [arrows.left]:  'moveLeft',
+        [arrows.up]:    'rotate',
+        [arrows.right]: 'moveRight',
+        [arrows.down]:  'moveDown'
+    }
+    if (actions[event.keyCode] !== undefined){ // ignore unmapped keys
+        this.field.handle(actions[event.keyCode]);
+    }
+}
+
+const moveRight = () => {
+    this.x += 1;
+}
+
+const moveLeft = () => {
+    this.x -= 1;
+}
+
+const moveDown = () => {
+    this.y += 1;
+}
+
+const getRandomPosition = () => {
+    const pieceTypes = Object.keys(Pieces);
+
+    const randomType = Math.floor(Math.random() * pieceTypes.length);
+
+    const randomRotation = Math.floor(Math.random()*4);
+
+    return{
+        type: randomType,
+        rotation: randomRotation,
+        piece: Pieces[randomType],
     }
 }
 
