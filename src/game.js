@@ -1,15 +1,14 @@
 import Pieces from '../src/pieces.js'
 
+let gameOver = false;
 let CurrentPiece = [];
 let CurrentPieceData = {x: 4, y: 0, rotation: 0}
 let NextPiece = [];
-let PlacedBlocks = [{x: 1, y: 26}, {x: 2, y: 26}, {x: 3, y: 26}, {x: 4, y: 26} ];
+let PlacedBlocks = [];
 
 export const onGameStart = () => {
     const first = getRandomPiece();
     const next = getRandomPiece();
-
-
 
     CurrentPiece = Pieces[first.type];
     CurrentPieceData = { x: 4, y: 0, rotation: first.rotation};
@@ -31,12 +30,8 @@ let timeAccumulate = 0;
 export const executeGameLogic = ({deltaTime, elapsedTime}) => {
     timeAccumulate = timeAccumulate + deltaTime;
 
-    console.log(timeAccumulate);
-    console.log(CurrentPieceData);
-    console.log(PlacedBlocks);
-
-    if(timeAccumulate > 5){
-        timeAccumulate -= 5;
+    if(timeAccumulate > 1){
+        timeAccumulate -= 1;
         tetrisTime()
     }
 
@@ -89,33 +84,39 @@ const placePiece = (ctx, boardX, pieceParts, placedPieces) => {
 
 }
 
-const tetrisTime = () => {
-    let shouldStop = false;
-    console.log("EverySecond")
-
-
-    for (let i = 0; i < CurrentPiece[CurrentPieceData.rotation].length; i++) {
-        const yCurrent = CurrentPiece[CurrentPieceData.rotation][i].y;
-        const xCurrent = CurrentPiece[CurrentPieceData.rotation][i].x;
-        if (yCurrent + CurrentPieceData.y > 25){
-            shouldStop = true;
-            break;
+const canMovePiece = (xMove, yMove, piece) => {
+    for (const pieceBlock of piece[CurrentPieceData.rotation]) {
+        if (pieceBlock.y + CurrentPieceData.y + yMove > 26){
+            return false;
         }
-        for (let j = 0; j < PlacedBlocks.length; j++) {
-            const block = PlacedBlocks[j];
-            if (yCurrent + CurrentPieceData.y +1 === block.y && xCurrent + CurrentPieceData.x === block.x) {
-                shouldStop = true;
-                break;
+        for (const block of PlacedBlocks) {
+            if (pieceBlock.y + CurrentPieceData.y + yMove === block.y && pieceBlock.x + CurrentPieceData.x + xMove === block.x) {
+                return false;
             }
         }
     }
+    return true;
+}
 
-    if(!shouldStop){
+const tetrisTime = () => {
+    if(gameOver){
+        PlacedBlocks = [];
+        spawnNextPiece()
+        gameOver = false;
+    }
+
+
+    console.log("EverySecond")
+
+    if(canMovePiece(0, 1, CurrentPiece)){
         CurrentPieceData.y = CurrentPieceData.y + 1;
     }else{
         PlacedBlocks.push(...CurrentPiece[CurrentPieceData.rotation].map(part => {
             return {x: part.x + CurrentPieceData.x, y: part.y + CurrentPieceData.y};
         }));
         spawnNextPiece()
+        if(!canMovePiece(0, 0, CurrentPiece)){
+            gameOver = true;
+        }
     }
 }
