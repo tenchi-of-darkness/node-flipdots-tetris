@@ -21,7 +21,7 @@ http
         </body>
       </html>
     `);
-		} else if (req.url.startsWith("/frame.png")) {
+		} else if (req.url?.startsWith("/frame.png")) {
 			res.writeHead(200, { "Content-Type": "image/png" });
 			res.end(fs.readFileSync("./output/frame.png"));
 		}

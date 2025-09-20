@@ -1,5 +1,5 @@
-const offsetPiece = (piece) => piece.map((c) => {
-    return {...c, x: c.x-5}
+const offsetPiece = (piece: { x: number; y: number }[]) => piece.map((c) => {
+    return {x: c.x-5, y: c.y};
 })
 
 const LPiece0 = offsetPiece([{ x: 5, y: 1 }, { x: 6, y: 1 }, { x: 7, y: 1 }, { x: 7, y: 0 }])
@@ -44,6 +44,6 @@ const JPiece2 = offsetPiece([{ x: 5, y: 1 }, { x: 6, y: 1 }, { x: 7, y: 1 }, { x
 const JPiece3 = offsetPiece([{ x: 6, y: 0 }, { x: 6, y: 1 }, { x: 6, y: 2 }, { x: 5, y: 2 }])
 const JPieces = [JPiece0, JPiece1, JPiece2, JPiece3]
 
-export const Pieces = {L:LPieces, I:IPieces, O:OPieces, S:SPieces, Z:ZPieces, T:TPieces, J:JPieces};
+export type PiecesKeyType= "L" | "I" | "O" | "S" | "Z" | "T" | "J";
 
-export default Pieces;
+export const Pieces = {L:LPieces, I:IPieces, O:OPieces, S:SPieces, Z:ZPieces, T:TPieces, J:JPieces};

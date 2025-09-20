@@ -39,15 +39,15 @@ Once running:
 
 ## Project Structure
 
-- `src/index.js` - Main entry point that sets up the canvas, rendering loop, and example animations
-- `src/ticker.js` - Handles the timing mechanism (like requestAnimationFrame for Node.js)
-- `src/preview.js` - Creates a simple HTTP server for real-time preview in the browser
-- `src/settings.js` - Configuration for display resolution, panel layout, and framerate
+- `src/index.ts` - Main entry point that sets up the canvas, rendering loop, and example animations
+- `src/ticker.ts` - Handles the timing mechanism (like requestAnimationFrame for Node.js)
+- `src/preview.ts` - Creates a simple HTTP server for real-time preview in the browser
+- `src/settings.ts` - Configuration for display resolution, panel layout, and framerate
 - `output/` - Directory containing generated PNG frames
 
 ## Settings and Configuration
 
-The display settings can be modified in `src/settings.js`:
+The display settings can be modified in `src/settings.ts`:
 
 ```javascript
 export const FPS = 15;                    // Frames per second
@@ -61,7 +61,7 @@ export const RESOLUTION = [               // Total resolution calculation
 
 ## Creating Your Own Animations
 
-The main rendering loop is in `src/index.js`. To create your own animations:
+The main rendering loop is in `src/index.ts`. To create your own animations:
 
 1. Modify the callback function in the `ticker.start()` method
 2. Use the canvas 2D context (`ctx`) to draw your graphics

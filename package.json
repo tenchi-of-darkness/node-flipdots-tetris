@@ -1,26 +1,29 @@
 {
-	"name": "flipdots",
-	"version": "1.0.0",
-	"main": "index.js",
-	"type": "module",
-	"scripts": {
-		"dev": "nodemon src/index.js --dev",
-		"start": "node src/index.js"
-	},
-	"author": "Stef van Wijchen (OWOW)",
-	"license": "ISC",
-	"description": "",
-	"devDependencies": {
-		"nodemon": "^3.1.10"
-	},
-	"dependencies": {
-		"@owowagency/flipdot-emu": "file:packages/owowagency-flipdot-emu-1.0.0.tgz",
-		"canvas": "^3.1.0"
-	},
-	"pnpm": {
-		"onlyBuiltDependencies": [
-			"@serialport/bindings-cpp",
-			"canvas"
-		]
-	}
+  "name": "flipdots",
+  "version": "1.0.0",
+  "main": "index.js",
+  "type": "module",
+  "scripts": {
+    "dev": "nlx tsc-watch --onSuccess \"node ./dist/index.js --dev\"",
+    "build": "tsc",
+    "start": "node dist/index.js"
+  },
+  "author": "Stef van Wijchen (OWOW)",
+  "license": "ISC",
+  "description": "",
+  "devDependencies": {
+    "ts-watch": "^1.0.8",
+    "typescript": "^5.9.2",
+    "@types/node": "^24.5.2"
+  },
+  "dependencies": {
+    "@owowagency/flipdot-emu": "file:packages/owowagency-flipdot-emu-1.0.0.tgz",
+    "canvas": "^3.1.0"
+  },
+  "pnpm": {
+    "onlyBuiltDependencies": [
+      "@serialport/bindings-cpp",
+      "canvas"
+    ]
+  }
 }

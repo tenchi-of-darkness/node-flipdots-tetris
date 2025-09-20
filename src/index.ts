@@ -1,11 +1,11 @@
 import {Ticker} from "./ticker.js";
-import {createCanvas, registerFont} from "canvas";
+import {CanvasRenderingContext2D, createCanvas, registerFont} from "canvas";
 import fs from "node:fs";
 import path from "node:path";
 import {FPS, LAYOUT} from "./settings.js";
 import {Display} from "@owowagency/flipdot-emu";
 import "./preview.js";
-import {executeGameLogic, onGameStart} from "./game.js";
+import {Game} from "./tetris/game.js";
 
 const IS_DEV = process.argv.includes("--dev");
 
@@ -66,26 +66,26 @@ ctx.textBaseline = "top";
 // Initialize the ticker at x frames per second
 const ticker = new Ticker({fps: FPS});
 
-const drawField = (ctx, x) => {
+const drawField = (ctx: CanvasRenderingContext2D, x: number) => {
     ctx.fillRect(x, 0, 12, 28)
     ctx.clearRect(x + 1, 0, 10, 27)
 }
 
-const drawMovingPiece = (ctx, boardX, x, y, pieceParts) => {
+const drawMovingPiece = (ctx: CanvasRenderingContext2D, boardX: number, x: number, y: number, pieceParts: {x: number, y: number}[]) => {
     pieceParts.forEach((piece) => {
         ctx.fillRect(boardX + x + 1 + piece.x, y + piece.y, 1, 1)
     })
 }
 
-const drawBlockGrid = (ctx, boardX, blockGrid) => {
+const drawBlockGrid = (ctx: CanvasRenderingContext2D, boardX: number, blockGrid: any[]) => {
     blockGrid.forEach((block) => {
         ctx.fillRect(boardX + 1 + block.x, block.y, 1, 1)
     })
 }
 
-onGameStart();
+const game = new Game();
 
-ticker.start(({deltaTime, elapsedTime}) => {
+ticker.start(({deltaTime, elapsedTime}: {deltaTime: number, elapsedTime: number}) => {
     console.clear();
     console.time("Write frame");
     console.log(`Rendering a ${width}x${height} canvas`);
@@ -97,7 +97,7 @@ ticker.start(({deltaTime, elapsedTime}) => {
     ctx.fillStyle = "#000";
     ctx.fillRect(0, 0, width, height);
 
-    const gameData = executeGameLogic({deltaTime, elapsedTime});
+    const gameData = game.executeTick({deltaTime, elapsedTime});
 
     // Display the word
     {
