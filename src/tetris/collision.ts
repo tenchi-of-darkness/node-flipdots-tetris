@@ -21,11 +21,15 @@ export const canMovePiece = (xMove: number, yMove: number, piece: MovablePiece, 
     return true;
 }
 
-
-
 export interface PlacedBlock {
     x: number;
     y: number;
 }
 
 export type PlacedBlocks = PlacedBlock[];
+
+export const pushPieceBlocks = (piece: MovablePiece, placedBlocks: PlacedBlocks) => {
+    placedBlocks.push(...Pieces[piece.type][piece.rotation].map(part => {
+        return {x: part.x + piece.x, y: part.y + piece.y};
+    }));
+}

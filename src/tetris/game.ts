@@ -1,25 +1,34 @@
 import {Pieces, PiecesKeyType} from "./pieces.js";
 import {getRandomPiece, getRandomRotation} from "./random.js";
-import {canMovePiece, MovablePiece, PlacedBlocks} from "./collision.js";
-import {TetrisTicker} from "./ticker.js";
+import {canMovePiece, MovablePiece, PlacedBlocks, pushPieceBlocks} from "./collision.js";
 
 const TimeAccumulatePerGameTick = 1;
 
 const PieceStartingLocation = {x: 4, y: 0}
 
+export interface GameData {
+    currentPiece: {
+        x: number;
+        y: number;
+        rotation: number;
+        piece: { x: number, y: number }[][];
+    };
+    nextPiece: {
+        rotation: number;
+        piece: { x: number, y: number }[][];
+    };
+    blockGrid: PlacedBlocks
+}
+
 export class Game {
     //How long per game tick
     _tetris: TetrisLogic = new TetrisLogic();
-    _ticker: TetrisTicker = new TetrisTicker();
 
-    executeTick({deltaTime, elapsedTime}: { deltaTime: number; elapsedTime: number }) {
-        this._ticker.waitForTick(deltaTime, () => {
-            this._tetris.executeTick()
-            if (this._tetris.gameOver) {
-                this._ticker = new TetrisTicker()
-                this._tetris = new TetrisLogic()
-            }
-        })
+    executeTick(): GameData {
+        this._tetris.executeTick()
+        if (this._tetris.gameOver) {
+            this._tetris = new TetrisLogic()
+        }
 
         return {
             currentPiece: {
@@ -54,28 +63,36 @@ export class TetrisLogic {
     executeTick() {
         this._ticks++;
 
+        this.tick();
+
         if (this._ticks <= ticksPerDrop) {
             return;
         }
 
-        this.tick();
+        this.drop();
 
         this._ticks = 0;
     }
 
-    private tick(){
+    private tick() {
+
+    }
+
+    private drop() {
         if (canMovePiece(0, 1, this._currentPiece, this._placedBlocks)) {
             this._currentPiece.y = this._currentPiece.y + 1;
         } else {
-            this.drop()
+            pushPieceBlocks(this._currentPiece, this._placedBlocks);
+
+            this.resetPiece();
+
+            if (!canMovePiece(0, 1, this._currentPiece, this._placedBlocks)) {
+                this.gameOver = true;
+            }
         }
     }
 
-    private drop(){
-        this._placedBlocks.push(...Pieces[this._currentPiece.type][this._currentPiece.rotation].map(part => {
-            return {x: part.x + this._currentPiece.x, y: part.y + this._currentPiece.y};
-        }));
-
+    private resetPiece() {
         this._currentPiece = {
             ...PieceStartingLocation,
             rotation: this._nextPiece.rotation,
@@ -85,10 +102,6 @@ export class TetrisLogic {
         this._nextPiece = {
             rotation: getRandomRotation(),
             type: getRandomPiece(),
-        }
-
-        if (!canMovePiece(0, 0, this._currentPiece, this._placedBlocks)) {
-            this.gameOver = true;
         }
     }
 }

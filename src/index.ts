@@ -5,7 +5,7 @@ import path from "node:path";
 import {FPS, LAYOUT} from "./settings.js";
 import {Display} from "@owowagency/flipdot-emu";
 import "./preview.js";
-import {Game} from "./tetris/game.js";
+import {Game, GameData} from "./tetris/game.js";
 
 const IS_DEV = process.argv.includes("--dev");
 
@@ -83,7 +83,38 @@ const drawBlockGrid = (ctx: CanvasRenderingContext2D, boardX: number, blockGrid:
     })
 }
 
-const game = new Game();
+let boardX = 1; // So first boardX = 1
+let firstBoard = true;
+const getNextBoardX = () => {
+    if(firstBoard) {
+        firstBoard = false;
+        return boardX;
+    } else {
+        return boardX+=14;
+    }
+}
+
+const resetRenderBoardX = ()=>{
+    boardX = 1;
+    firstBoard = true;
+}
+
+const drawBoard = (innerGameData: GameData) => {
+    const boardX = getNextBoardX();
+    drawField(ctx, boardX);
+    {
+        const {x, y, rotation, piece} = innerGameData.currentPiece;
+        drawMovingPiece(ctx, boardX, x, y, piece[rotation]);
+        drawBlockGrid(ctx, boardX, innerGameData.blockGrid);
+    }
+}
+
+const game1 = new Game();
+const game2 = new Game();
+const game3 = new Game();
+const game4 = new Game();
+const game5 = new Game();
+const game6 = new Game();
 
 ticker.start(({deltaTime, elapsedTime}: {deltaTime: number, elapsedTime: number}) => {
     console.clear();
@@ -97,7 +128,12 @@ ticker.start(({deltaTime, elapsedTime}: {deltaTime: number, elapsedTime: number}
     ctx.fillStyle = "#000";
     ctx.fillRect(0, 0, width, height);
 
-    const gameData = game.executeTick({deltaTime, elapsedTime});
+    const gameData1 = game1.executeTick();
+    const gameData2 = game2.executeTick();
+    const gameData3 = game3.executeTick();
+    const gameData4 = game4.executeTick();
+    const gameData5 = game5.executeTick();
+    const gameData6 = game6.executeTick();
 
     // Display the word
     {
@@ -105,13 +141,14 @@ ticker.start(({deltaTime, elapsedTime}: {deltaTime: number, elapsedTime: number}
         ctx.strokeStyle = "#fff";
         ctx.font = '14px Dotmap';
 
-        //Field one
-        drawField(ctx, 1);
-        {
-            const {x, y, rotation, piece} = gameData.currentPiece;
-            drawMovingPiece(ctx, 1, x, y, piece[rotation]);
-            drawBlockGrid(ctx, 1, gameData.blockGrid);
-        }
+        drawBoard(gameData1);
+        drawBoard(gameData2);
+        drawBoard(gameData3);
+        drawBoard(gameData4);
+        drawBoard(gameData5);
+        drawBoard(gameData6);
+
+        resetRenderBoardX();
 
 
         //Field two
