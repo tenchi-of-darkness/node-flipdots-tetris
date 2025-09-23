@@ -60,6 +60,8 @@ export class TetrisLogic {
         type: getRandomPiece(),
     }
 
+    _movementCounter: number = 0;
+
     executeTick() {
         this._ticks++;
 
@@ -75,7 +77,20 @@ export class TetrisLogic {
     }
 
     private tick() {
+        this._movementCounter++;
 
+        if(this._movementCounter == 5){
+            let moveThatX = -1;
+            if(Math.random() > 0.5){
+                moveThatX = 1;
+            }
+
+            if (canMovePiece(moveThatX, 0, this._currentPiece, this._placedBlocks)) {
+                this._currentPiece.x = this._currentPiece.x + moveThatX;
+            }
+
+            this._movementCounter = 0;
+        }
     }
 
     private drop() {
