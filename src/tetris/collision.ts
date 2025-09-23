@@ -12,6 +12,9 @@ export const canMovePiece = (xMove: number, yMove: number, piece: MovablePiece, 
         if (pieceBlock.y + piece.y + yMove > 26){
             return false;
         }
+        if (pieceBlock.x + piece.x + xMove < 0 || pieceBlock.x + piece.x + xMove > 9){
+            return false;
+        }
         for (const block of placedBlocks) {
             if (pieceBlock.y + piece.y + yMove === block.y && pieceBlock.x + piece.x + xMove === block.x) {
                 return false;
