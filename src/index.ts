@@ -7,6 +7,7 @@ import {Display} from "@owowagency/flipdot-emu";
 import "./preview.js";
 import {Game, GameData} from "./tetris/game.js";
 import GameController from "./controller/game-controller.js";
+import {initializeControllerState, updateControllerState} from "./controller/controller-state.js";
 
 const IS_DEV = process.argv.includes("--dev");
 
@@ -110,21 +111,10 @@ const drawBoard = (innerGameData: GameData) => {
     }
 }
 
-// Working controller test code
-// const controller = new GameController()
-// await controller.init();
-//
-// console.log("start")
-// controller.on('button', (btn) => console.log(`Button: ${btn} pressed`))
-// controller.on('thumbsticks', (val) => console.log(val))
+await initializeControllerState();
 
-
+//Working controller test code
 const game1 = new Game();
-const game2 = new Game();
-// const game3 = new Game();
-// const game4 = new Game();
-// const game5 = new Game();
-// const game6 = new Game();
 
 ticker.start(({deltaTime, elapsedTime}: {deltaTime: number, elapsedTime: number}) => {
     console.clear();
@@ -138,12 +128,8 @@ ticker.start(({deltaTime, elapsedTime}: {deltaTime: number, elapsedTime: number}
     ctx.fillStyle = "#000";
     ctx.fillRect(0, 0, width, height);
 
-    const gameData1 = game1.executeTick();
-    const gameData2 = game2.executeTick();
-    // const gameData3 = game3.executeTick();
-    // const gameData4 = game4.executeTick();
-    // const gameData5 = game5.executeTick();
-    // const gameData6 = game6.executeTick();
+    const controllerState = updateControllerState();
+    const gameData1 = game1.executeTick(controllerState);
 
     // Display the word
     {
@@ -152,17 +138,8 @@ ticker.start(({deltaTime, elapsedTime}: {deltaTime: number, elapsedTime: number}
         ctx.font = '14px Dotmap';
 
         drawBoard(gameData1);
-        drawBoard(gameData2);
-        // drawBoard(gameData3);
-        // drawBoard(gameData4);
-        // drawBoard(gameData5);
-        // drawBoard(gameData6);
 
         resetRenderBoardX();
-
-
-        //Field two
-        // drawField(ctx, 71);
     }
 
     // Convert image to binary (purely black and white) for flipdot display

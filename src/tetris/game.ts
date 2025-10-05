@@ -1,8 +1,8 @@
 import {Pieces, PiecesKeyType} from "./pieces.js";
 import {getRandomPiece, getRandomRotation} from "./random.js";
 import {canMovePiece, MovablePiece, PlacedBlocks, pushPieceBlocks} from "./collision.js";
-
-const TimeAccumulatePerGameTick = 1;
+import GameController, {getControllerIndexFromXbox} from "../controller/game-controller.js";
+import {GameControllerState} from "../controller/controller-state.js";
 
 const PieceStartingLocation = {x: 4, y: 0}
 
@@ -24,11 +24,46 @@ export class Game {
     //How long per game tick
     _tetris: TetrisLogic = new TetrisLogic();
 
-    executeTick(): GameData {
-        this._tetris.executeTick()
+    _leftPressed = false;
+    _lastLeftPressed = false;
+    _rightPressed = false;
+    _lastRightPressed = false;
+
+    executeTick(controllerState: GameControllerState): GameData {
+        const currentLeftPress = controllerState.buttonsPressed.includes(getControllerIndexFromXbox("D_PAD_LEFT"))
+        const currentRightPress = controllerState.buttonsPressed.includes(getControllerIndexFromXbox("D_PAD_RIGHT"))
+        let moveX = 0;
+
+        if(currentLeftPress && !this._leftPressed){
+            this._leftPressed = true;
+        }
+        if(currentRightPress && !this._rightPressed){
+            this._rightPressed = true;
+        }
+
+        if(this._leftPressed && !this._lastLeftPressed){
+            moveX--;
+        }
+
+        if(!currentLeftPress){
+            this._leftPressed = false;
+        }
+
+        if(this._rightPressed && !this._lastRightPressed){
+            moveX++;
+        }
+
+        if(!currentRightPress){
+            this._rightPressed = false;
+        }
+
+        this._tetris.executeTick(moveX)
         if (this._tetris.gameOver) {
             this._tetris = new TetrisLogic()
         }
+
+        this._lastLeftPressed = this._leftPressed;
+        this._lastRightPressed = this._rightPressed;
 
         return {
             currentPiece: {
@@ -43,7 +78,8 @@ export class Game {
     }
 }
 
-const ticksPerDrop = 1;
+const ticksPerDrop = 5;
+const ticksPerControl = 5;
 
 export class TetrisLogic {
     gameOver: boolean = false;
@@ -62,10 +98,14 @@ export class TetrisLogic {
 
     _movementCounter: number = 0;
 
-    executeTick() {
+    executeTick(moveX: number) {
         this._ticks++;
 
-        this.tick();
+        this.tick(moveX);
+
+        if (this._ticks <= ticksPerControl) {
+            return;
+        }
 
         if (this._ticks <= ticksPerDrop) {
             return;
@@ -76,20 +116,11 @@ export class TetrisLogic {
         this._ticks = 0;
     }
 
-    private tick() {
+    private tick(moveX: number) {
         this._movementCounter++;
 
-        if(this._movementCounter == 5){
-            let moveThatX = -1;
-            if(Math.random() > 0.5){
-                moveThatX = 1;
-            }
-
-            if (canMovePiece(moveThatX, 0, this._currentPiece, this._placedBlocks)) {
-                this._currentPiece.x = this._currentPiece.x + moveThatX;
-            }
-
-            this._movementCounter = 0;
+        if (canMovePiece(moveX, 0, this._currentPiece, this._placedBlocks)) {
+            this._currentPiece.x = this._currentPiece.x + moveX;
         }
     }
 

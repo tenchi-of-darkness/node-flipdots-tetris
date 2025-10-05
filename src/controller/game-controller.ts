@@ -11,6 +11,14 @@ declare global {
     }
 }
 
+export function getControllerXboxString(index: number) {
+    return buttons[index];
+}
+
+export function getControllerIndexFromXbox(xboxString: string) {
+    return buttons.indexOf(xboxString);
+}
+
 export default class GameController {
     // Use private for internal properties and public readonly for constants
     private eventEmitter: EventEmitter;
@@ -37,21 +45,15 @@ export default class GameController {
         const browser: Browser = await puppeteer.launch();
         const page: Page = await browser.newPage();
 
-        // Expose a handler from Node.js to the browser page
         await page.exposeFunction('sendEventToProcessHandle', (event: string, msg: any) => {
-            // The original code stringifies the message, we'll keep that behavior.
             this.eventEmitter.emit(event, JSON.stringify(msg));
         });
 
-        // Expose a console.log wrapper to see logs from the browser in the Node console
         await page.exposeFunction('consoleLog', (e: string) => {
             console.log(`[Browser] ${e}`);
         });
 
-        // Evaluate code in the browser context to listen for gamepad APIs
-        // We pass our constants and button mappings as arguments.
         await page.evaluate(({buttons, pollInterval, noiseThreshold}) => {
-            // Use a Record to type the interval map
             const intervals: Record<number, number> = {};
 
             window.addEventListener("gamepadconnected", (e: GamepadEvent) => {
@@ -63,18 +65,14 @@ export default class GameController {
                 window.consoleLog(`Gamepad connected at index ${gp.index}: ${gp.id}.`);
 
                 intervals[e.gamepad.index] = window.setInterval(() => {
-                    // Re-fetch the gamepad state on each interval
                     gp = navigator.getGamepads()[e.gamepad.index];
                     if (!gp) return;
 
-                    // Check thumbsticks for movement beyond the noise threshold
-                    // Axes: [Left X, Left Y, Right X, Right Y]
                     const axesSum = gp.axes.reduce((sum, axis) => sum + Math.abs(axis), 0);
                     if (axesSum > noiseThreshold) {
                         window.sendEventToProcessHandle('thumbsticks', gp.axes);
                     }
 
-                    // Check each button for presses
                     for (let i = 0; i < gp.buttons.length; i++) {
                         if (gp.buttons[i].pressed) {
                             const buttonName = buttons[i] || `Button ${i}`;
