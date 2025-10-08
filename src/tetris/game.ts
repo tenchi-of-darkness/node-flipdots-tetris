@@ -1,6 +1,6 @@
 import {Pieces, PiecesKeyType} from "./pieces.js";
 import {getRandomPiece, getRandomRotation} from "./random.js";
-import {canMovePiece, MovablePiece, PlacedBlocks, pushPieceBlocks} from "./collision.js";
+import {canMovePiece, canRotatePiece, MovablePiece, PlacedBlocks, pushPieceBlocks} from "./collision.js";
 import GameController, {getControllerIndexFromXbox} from "../controller/game-controller.js";
 import {GameControllerState} from "../controller/controller-state.js";
 
@@ -36,6 +36,7 @@ export class Game {
         const currentRightPress = controllerState.buttonsPressed.includes(getControllerIndexFromXbox("D_PAD_RIGHT"))
         const currentBPress = controllerState.buttonsPressed.includes(getControllerIndexFromXbox("B"))
         let moveX = 0;
+        let rotateMove = 0;
 
         if(currentLeftPress && !this._leftPressed){
             this._leftPressed = true;
@@ -66,18 +67,14 @@ export class Game {
         }
 
         if(this._bPressed && !this._lastBPressed){
-            if(this._tetris._currentPiece.rotation >= 3) {
-                this._tetris._currentPiece.rotation = 0
-            } else {
-                this._tetris._currentPiece.rotation++;
-            }
+            rotateMove++;
         }
 
         if(!currentBPress){
             this._bPressed = false;
         }
 
-        this._tetris.executeTick(moveX)
+        this._tetris.executeTick(moveX, rotateMove)
         if (this._tetris.gameOver) {
             this._tetris = new TetrisLogic()
         }
@@ -119,10 +116,10 @@ export class TetrisLogic {
 
     _movementCounter: number = 0;
 
-    executeTick(moveX: number) {
+    executeTick(moveX: number, rotateMove: number) {
         this._ticks++;
 
-        this.tick(moveX);
+        this.tick(moveX, rotateMove);
 
         if (this._ticks <= ticksPerControl) {
             return;
@@ -137,11 +134,14 @@ export class TetrisLogic {
         this._ticks = 0;
     }
 
-    private tick(moveX: number) {
+    private tick(moveX: number, rotateMove: number) {
         this._movementCounter++;
 
         if (canMovePiece(moveX, 0, this._currentPiece, this._placedBlocks)) {
             this._currentPiece.x = this._currentPiece.x + moveX;
+        }
+        if (canRotatePiece(rotateMove, this._currentPiece, this._placedBlocks)) {
+            this._currentPiece.rotation = (this._currentPiece.rotation + rotateMove+4)%4;
         }
     }
 
@@ -167,6 +167,7 @@ export class TetrisLogic {
         }
 
         this._nextPiece = {
+
             rotation: getRandomRotation(),
             type: getRandomPiece(),
         }

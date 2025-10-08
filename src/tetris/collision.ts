@@ -25,6 +25,25 @@ export const canMovePiece = (xMove: number, yMove: number, piece: MovablePiece, 
     return true;
 }
 
+
+export const canRotatePiece = (rotationMove: number, piece: MovablePiece, placedBlocks: PlacedBlocks) => {
+    console.log(piece.type, piece.rotation);
+    for (const pieceBlock of Pieces[piece.type][(piece.rotation + rotationMove+4)%4]) {
+        if (pieceBlock.y + piece.y > 26){
+            return false;
+        }
+        if (pieceBlock.x + piece.x < 0 || pieceBlock.x + piece.x > 9){
+            return false;
+        }
+        for (const block of placedBlocks) {
+            if (pieceBlock.y + piece.y === block.y && pieceBlock.x + piece.x === block.x) {
+                return false;
+            }
+        }
+    }
+    return true;
+}
+
 export interface PlacedBlock {
     x: number;
     y: number;
