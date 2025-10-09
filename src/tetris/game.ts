@@ -21,7 +21,6 @@ export interface GameData {
 }
 
 export class Game {
-    //How long per game tick
     _tetris: TetrisLogic = new TetrisLogic();
 
     _leftPressed = false;
