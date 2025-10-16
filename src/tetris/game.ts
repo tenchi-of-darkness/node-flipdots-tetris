@@ -28,12 +28,15 @@ export class Game {
     _rightPressed = false;
     _lastRightPressed = false;
     _bPressed = false;
+    _xPressed = false;
     _lastBPressed = false;
+    _lastXPressed = false;
 
     executeTick(controllerState: GameControllerState): GameData {
         const currentLeftPress = controllerState.buttonsPressed.includes(getControllerIndexFromXbox("D_PAD_LEFT"))
         const currentRightPress = controllerState.buttonsPressed.includes(getControllerIndexFromXbox("D_PAD_RIGHT"))
         const currentBPress = controllerState.buttonsPressed.includes(getControllerIndexFromXbox("B"))
+        const currentXPress = controllerState.buttonsPressed.includes(getControllerIndexFromXbox("X"))
         let moveX = 0;
         let rotateMove = 0;
 
@@ -47,6 +50,10 @@ export class Game {
 
         if(currentBPress && !this._bPressed){
             this._bPressed = true;
+        }
+
+        if(currentXPress && !this._xPressed){
+            this._xPressed = true;
         }
 
         if(this._leftPressed && !this._lastLeftPressed){
@@ -73,6 +80,14 @@ export class Game {
             this._bPressed = false;
         }
 
+        if(this._xPressed && !this._lastXPressed){
+            rotateMove--;
+        }
+
+        if(!currentXPress){
+            this._xPressed = false;
+        }
+
         this._tetris.executeTick(moveX, rotateMove)
         if (this._tetris.gameOver) {
             this._tetris = new TetrisLogic()
@@ -81,6 +96,7 @@ export class Game {
         this._lastLeftPressed = this._leftPressed;
         this._lastRightPressed = this._rightPressed;
         this._lastBPressed = this._bPressed;
+        this._lastXPressed = this._xPressed;
 
         return {
             currentPiece: {
