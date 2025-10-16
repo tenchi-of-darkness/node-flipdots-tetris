@@ -35,60 +35,71 @@ export class Game {
     executeTick(controllerState: GameControllerState): GameData {
         const currentLeftPress = controllerState.buttonsPressed.includes(getControllerIndexFromXbox("D_PAD_LEFT"))
         const currentRightPress = controllerState.buttonsPressed.includes(getControllerIndexFromXbox("D_PAD_RIGHT"))
+        const currentUpPress = controllerState.buttonsPressed.includes(getControllerIndexFromXbox("D_PAD_UP"))
+        const currentDownPress = controllerState.buttonsPressed.includes(getControllerIndexFromXbox("D_PAD_DOWN"))
         const currentBPress = controllerState.buttonsPressed.includes(getControllerIndexFromXbox("B"))
         const currentXPress = controllerState.buttonsPressed.includes(getControllerIndexFromXbox("X"))
         let moveX = 0;
         let rotateMove = 0;
+        let dropHard = false;
+        let dropSoft = false;
 
-        if(currentLeftPress && !this._leftPressed){
+        if (currentLeftPress && !this._leftPressed) {
             this._leftPressed = true;
         }
 
-        if(currentRightPress && !this._rightPressed){
+        if (currentRightPress && !this._rightPressed) {
             this._rightPressed = true;
         }
 
-        if(currentBPress && !this._bPressed){
+        if (currentBPress && !this._bPressed) {
             this._bPressed = true;
         }
 
-        if(currentXPress && !this._xPressed){
+        if (currentXPress && !this._xPressed) {
             this._xPressed = true;
         }
 
-        if(this._leftPressed && !this._lastLeftPressed){
+        if (this._leftPressed && !this._lastLeftPressed) {
             moveX--;
         }
 
-        if(!currentLeftPress){
+        if (!currentLeftPress) {
             this._leftPressed = false;
         }
 
-        if(this._rightPressed && !this._lastRightPressed){
+        if (this._rightPressed && !this._lastRightPressed) {
             moveX++;
         }
 
-        if(!currentRightPress){
+        if (!currentRightPress) {
             this._rightPressed = false;
         }
 
-        if(this._bPressed && !this._lastBPressed){
+        if (this._bPressed && !this._lastBPressed) {
             rotateMove++;
         }
 
-        if(!currentBPress){
+        if (!currentBPress) {
             this._bPressed = false;
         }
 
-        if(this._xPressed && !this._lastXPressed){
+        if (this._xPressed && !this._lastXPressed) {
             rotateMove--;
         }
 
-        if(!currentXPress){
+        if (!currentXPress) {
             this._xPressed = false;
         }
 
-        this._tetris.executeTick(moveX, rotateMove)
+        if (currentUpPress) {
+            dropHard = true;
+        } else if (currentDownPress) {
+            dropSoft = true;
+        }
+
+
+        this._tetris.executeTick(moveX, rotateMove, dropSoft, dropHard)
         if (this._tetris.gameOver) {
             this._tetris = new TetrisLogic()
         }
@@ -131,16 +142,20 @@ export class TetrisLogic {
 
     _movementCounter: number = 0;
 
-    executeTick(moveX: number, rotateMove: number) {
+    executeTick(moveX: number, rotateMove: number, dropSoft: boolean, dropHard: boolean) {
         this._ticks++;
 
         this.tick(moveX, rotateMove);
 
-        if (this._ticks <= ticksPerControl) {
-            return;
+        let actualTicksPerDrop = ticksPerDrop;
+
+        if (dropHard) {
+            actualTicksPerDrop -= 4;
+        } else if (dropSoft) {
+            actualTicksPerDrop -= 2;
         }
 
-        if (this._ticks <= ticksPerDrop) {
+        if (this._ticks <= actualTicksPerDrop) {
             return;
         }
 
@@ -156,7 +171,7 @@ export class TetrisLogic {
             this._currentPiece.x = this._currentPiece.x + moveX;
         }
         if (canRotatePiece(rotateMove, this._currentPiece, this._placedBlocks)) {
-            this._currentPiece.rotation = (this._currentPiece.rotation + rotateMove+4)%4;
+            this._currentPiece.rotation = (this._currentPiece.rotation + rotateMove + 4) % 4;
         }
     }
 
