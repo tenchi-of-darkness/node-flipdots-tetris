@@ -1,10 +1,17 @@
+// src/display/renderer.ts
 import {Canvas, CanvasRenderingContext2D, createCanvas, registerFont} from "canvas";
 import {Display} from "@owowagency/flipdot-emu";
 import fs from "node:fs";
 import path from "node:path";
-import {GameData} from "./tetris/game.js";
-import {LAYOUT} from "./settings.js";
+import {GameData} from "../game/index.js";
+import {LAYOUT} from "../config/index.js";
 
+/**
+ * The Renderer class is responsible for all drawing operations. It takes game state data
+ * and renders it to an in-memory canvas. Depending on the mode (dev or prod),
+ * it will either save the canvas as a PNG file for web preview or send the data
+ * to a physical flip-dot display.
+ */
 export class Renderer {
     private readonly display: Display;
     private readonly canvas: Canvas;
@@ -20,23 +27,30 @@ export class Renderer {
         this.initialize();
     }
 
+    /**
+     * Configures and creates the flip-dot display emulator instance.
+     * The transport method (IP for dev, Serial for prod) is chosen based on the isDev flag.
+     */
     private createDisplay(): Display {
         return new Display({
             layout: LAYOUT,
             panelWidth: 28,
             isMirrored: true,
-            transport: !this.isDev ? {
-                type: 'serial',
-                path: '/dev/ttyACM0',
-                baudRate: 57600
-            } : {
+            transport: this.isDev ? {
                 type: 'ip',
                 host: '127.0.0.1',
                 port: 3000
+            } : {
+                type: 'serial',
+                path: '/dev/ttyACM0',
+                baudRate: 57600
             }
         });
     }
 
+    /**
+     * Sets up the canvas context and registers custom fonts.
+     */
     private initialize() {
         if (!fs.existsSync(this.outputDir)) {
             fs.mkdirSync(this.outputDir, {recursive: true});
@@ -49,36 +63,33 @@ export class Renderer {
         this.ctx.textBaseline = "top";
     }
 
+    /**
+     * Loads and registers all custom fonts from the /fonts directory.
+     */
     private registerFonts() {
-        const fontsDir = path.resolve(import.meta.dirname, "../fonts");
+        const fontsDir = path.resolve(import.meta.dirname, "../../fonts");
         registerFont(path.join(fontsDir, "init-pidmobil-3-led-dotmap.ttf"), {family: "Dotmap"});
         registerFont(path.join(fontsDir, "OpenSans-Variable.ttf"), {family: "OpenSans"});
         registerFont(path.join(fontsDir, "PPNeueMontrealMono-Regular.ttf"), {family: "PPNeueMontreal"});
         registerFont(path.join(fontsDir, "Px437_ACM_VGA.ttf"), {family: "Px437_ACM_VGA"});
     }
 
+    /**
+     * The main rendering function, called on every frame.
+     * @param gameData An array of game data objects, one for each active player.
+     */
     public render(gameData: GameData[]) {
         this.clearCanvas();
+        this.prepareContext();
 
-        this.ctx.fillStyle = "#fff";
-        this.ctx.strokeStyle = "#fff";
-        this.ctx.font = '10.1px monospace';
-
-        // Draw games
+        // Draw each active game board.
         gameData.forEach((data, index) => {
             const boardX = 1 + index * 70;
             this.drawBoard(data, boardX);
         });
 
-        // Draw score
-        if (gameData.length === 2) {
-            this.drawScores(gameData[0], gameData[1]);
-        } else if (gameData.length === 1) {
-            const scoreX = 45;
-            this.ctx.textAlign = 'center';
-            this.ctx.fillText(`SCORE`, scoreX, 5);
-            this.ctx.fillText(`${gameData[0].score}`, scoreX, 15);
-        }
+        // Draw the score display.
+        this.drawScores(gameData);
 
         this.finalizeFrame();
     }
@@ -89,14 +100,20 @@ export class Renderer {
         this.ctx.fillRect(0, 0, this.canvas.width, this.canvas.height);
     }
 
-    private drawBoard(gameData: GameData, boardX: number) {
-        this.drawField(this.ctx, boardX);
-        const {x, y, rotation, piece} = gameData.currentPiece;
-        this.drawMovingPiece(this.ctx, boardX, x, y, piece[rotation]);
-        this.drawBlockGrid(this.ctx, boardX, gameData.blockGrid);
+    private prepareContext() {
+        this.ctx.fillStyle = "#fff";
+        this.ctx.strokeStyle = "#fff";
+        this.ctx.font = '10.1px monospace';
     }
 
-    private drawField(ctx: CanvasRenderingContext2D, x: number) {
+    private drawBoard(gameData: GameData, boardX: number) {
+        this.drawBoardOutline(this.ctx, boardX);
+        const {x, y, rotation, piece} = gameData.currentPiece;
+        this.drawMovingPiece(this.ctx, boardX, x, y, piece[rotation]);
+        this.drawPlacedBlocks(this.ctx, boardX, gameData.blockGrid);
+    }
+
+    private drawBoardOutline(ctx: CanvasRenderingContext2D, x: number) {
         ctx.fillRect(x, 0, 12, 28);
         ctx.clearRect(x + 1, 0, 10, 27);
     }
@@ -107,13 +124,28 @@ export class Renderer {
         });
     }
 
-    private drawBlockGrid(ctx: CanvasRenderingContext2D, boardX: number, blockGrid: any[]) {
+    private drawPlacedBlocks(ctx: CanvasRenderingContext2D, boardX: number, blockGrid: any[]) {
         blockGrid.forEach((block) => {
             ctx.fillRect(boardX + 1 + block.x, block.y, 1, 1);
         });
     }
 
-    private drawScores(gameData1: GameData, gameData2: GameData) {
+    private drawScores(gameData: GameData[]) {
+        if (gameData.length === 2) {
+            this.drawTwoPlayerScore(gameData[0], gameData[1]);
+        } else if (gameData.length === 1) {
+            this.drawSinglePlayerScore(gameData[0]);
+        }
+    }
+
+    private drawSinglePlayerScore(gameData: GameData) {
+        const scoreX = 45;
+        this.ctx.textAlign = 'center';
+        this.ctx.fillText(`SCORE`, scoreX, 5);
+        this.ctx.fillText(`${gameData.score}`, scoreX, 15);
+    }
+
+    private drawTwoPlayerScore(gameData1: GameData, gameData2: GameData) {
         const scoreX = 26;
         this.ctx.textAlign = 'left';
         this.ctx.fillText(`SCORE`, scoreX, -3);
@@ -123,27 +155,55 @@ export class Renderer {
         this.ctx.fillRect(scoreX - 12, 7, 56, 1);
     }
 
+    /**
+     * After all drawing is done, this function processes the canvas.
+     * It converts the image to black and white and then either writes it
+     * to a file (dev) or sends it to the flip-dot display (prod).
+     */
     private finalizeFrame() {
+        this.convertToBlackAndWhite();
+
+        if (this.isDev) {
+            this.writePngForPreview();
+        } else {
+            this.flushToDisplay();
+        }
+    }
+
+    /**
+     * Converts the canvas image to be purely black and white, which is what the
+     * flip-dot display requires.
+     */
+    private convertToBlackAndWhite() {
         const imageData = this.ctx.getImageData(0, 0, this.canvas.width, this.canvas.height);
         const data = imageData.data;
         for (let i = 0; i < data.length; i += 4) {
+            // Simple brightness check
             const brightness = (data[i] + data[i + 1] + data[i + 2]) / 3;
-            const binary = brightness > 127 ? 255 : 0;
-            data[i] = data[i + 1] = data[i + 2] = binary;
-            data[i + 3] = 255;
+            const color = brightness > 127 ? 255 : 0;
+            data[i] = data[i + 1] = data[i + 2] = color;
+            data[i + 3] = 255; // Alpha
         }
         this.ctx.putImageData(imageData, 0, 0);
+    }
 
-        if (this.isDev) {
-            const filename = path.join(this.outputDir, "frame.png");
-            const buffer = this.canvas.toBuffer("image/png");
-            fs.writeFileSync(filename, buffer);
-        } else {
-            const imageData = this.ctx.getImageData(0, 0, this.display.width, this.display.height);
-            this.display.setImageData(imageData);
-            if (this.display.isDirty()) {
-                this.display.flush();
-            }
+    /**
+     * Saves the current canvas state to a PNG file for the web preview.
+     */
+    private writePngForPreview() {
+        const filename = path.join(this.outputDir, "frame.png");
+        const buffer = this.canvas.toBuffer("image/png");
+        fs.writeFileSync(filename, buffer);
+    }
+
+    /**
+     * Sends the image data to the physical flip-dot display.
+     */
+    private flushToDisplay() {
+        const imageData = this.ctx.getImageData(0, 0, this.display.width, this.display.height);
+        this.display.setImageData(imageData);
+        if (this.display.isDirty()) {
+            this.display.flush();
         }
     }
 

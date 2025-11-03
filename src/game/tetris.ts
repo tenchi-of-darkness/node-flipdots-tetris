@@ -1,8 +1,7 @@
 import {Pieces, PiecesKeyType} from "./pieces.js";
 import {getRandomPiece, getRandomRotation} from "./random.js";
 import {canMovePiece, canRotatePiece, MovablePiece, PlacedBlocks, pushPieceBlocks} from "./collision.js";
-import {getControllerIndexFromXbox} from "../controller/game-controller.js";
-import {GameControllerState} from "../controller/controller-manager.js";
+import {getControllerIndexFromXbox, GamepadState} from "../input/index.js";
 
 const PieceStartingLocation = {x: 4, y: 0}
 const BOARD_WIDTH = 10;
@@ -35,8 +34,8 @@ export interface GameData {
     lines: number;
 }
 
-export class Game {
-    private tetris: TetrisLogic = new TetrisLogic();
+export class TetrisGameAdapter {
+    private game: TetrisGame = new TetrisGame();
 
     private lastButtonStates: ButtonStates = {
         left: false,
@@ -47,31 +46,31 @@ export class Game {
         rotateCCW: false,
     };
 
-    executeTick(controllerState: GameControllerState): GameData {
-        if (this.tetris.gameOver) {
-            this.tetris = new TetrisLogic();
+    executeTick(controllerState: GamepadState): GameData {
+        if (this.game.gameOver) {
+            this.game = new TetrisGame();
         }
 
-        let {moveHorizontal, moveRotation, dropHard, dropSoft} = this.handleInput(controllerState);
+        const {moveHorizontal, moveRotation, dropHard, dropSoft} = this.handleInput(controllerState);
 
-        this.tetris.executeTick(moveHorizontal, moveRotation, dropSoft, dropHard);
+        this.game.executeTick(moveHorizontal, moveRotation, dropSoft, dropHard);
 
         return {
             currentPiece: {
-                x: this.tetris.currentPiece.x,
-                y: this.tetris.currentPiece.y,
-                rotation: this.tetris.currentPiece.rotation,
-                piece: Pieces[this.tetris.currentPiece.type]
+                x: this.game.currentPiece.x,
+                y: this.game.currentPiece.y,
+                rotation: this.game.currentPiece.rotation,
+                piece: Pieces[this.game.currentPiece.type]
             },
-            nextPiece: {rotation: this.tetris.nextPiece.rotation, piece: Pieces[this.tetris.nextPiece.type]},
-            blockGrid: this.tetris.placedBlocks,
-            score: this.tetris.score,
-            level: this.tetris.level,
-            lines: this.tetris.lines,
+            nextPiece: {rotation: this.game.nextPiece.rotation, piece: Pieces[this.game.nextPiece.type]},
+            blockGrid: this.game.placedBlocks,
+            score: this.game.score,
+            level: this.game.level,
+            lines: this.game.lines,
         }
     }
 
-    private handleInput(controllerState: GameControllerState) {
+    private handleInput(controllerState: GamepadState) {
         const currentButtonStates = Object.fromEntries(
             Object.entries(buttonMapping).map(([action, buttonName]) => [
                 action,
@@ -83,18 +82,20 @@ export class Game {
             return currentButtonStates[action] && !this.lastButtonStates[action];
         };
 
-        let moveHorizontal: number;
+        let moveHorizontal = 0;
         if (wasJustPressed('right')) {
             moveHorizontal = 1;
-        } else {
-            moveHorizontal = wasJustPressed('left') ? -1 : 0;
+        } else if (wasJustPressed('left')) {
+            moveHorizontal = -1;
         }
-        let moveRotation: number;
+
+        let moveRotation = 0;
         if (wasJustPressed('rotateCW')) {
             moveRotation = 1;
-        } else {
-            moveRotation = wasJustPressed('rotateCCW') ? -1 : 0;
+        } else if (wasJustPressed('rotateCCW')) {
+            moveRotation = -1;
         }
+        
         const dropHard = currentButtonStates.hardDrop;
         const dropSoft = currentButtonStates.softDrop;
 
@@ -107,58 +108,38 @@ export class Game {
 const ticksPerDrop = {
     normal: 5,
     soft: 3,
-    hard: 1
+    hard: 1,
 };
 
-export class TetrisLogic {
+export class TetrisGame {
     gameOver: boolean = false;
     private ticks: number = 0;
     private _placedBlocks: PlacedBlocks = [];
-    private _currentPiece: MovablePiece = {
-        ...PieceStartingLocation,
-        rotation: getRandomRotation(),
-        type: getRandomPiece(),
-    }
-    private _nextPiece: { rotation: number; type: PiecesKeyType } = {
-        rotation: getRandomRotation(),
-        type: getRandomPiece(),
-    }
+    private _currentPiece: MovablePiece;
+    private _nextPiece: { rotation: number; type: PiecesKeyType };
 
     private _score: number = 0;
     private _level: number = 1;
     private _lines: number = 0;
 
-    get placedBlocks() {
-        return this._placedBlocks;
+    constructor() {
+        this._currentPiece = this.createNewPiece();
+        this._nextPiece = this.createNewPiece();
     }
 
-    get currentPiece() {
-        return this._currentPiece
-    }
-
-    get nextPiece() {
-        return this._nextPiece;
-    }
-
-    get score() {
-        return this._score;
-    }
-
-    get level() {
-        return this._level;
-    }
-
-    get lines() {
-        return this._lines;
-    }
+    get placedBlocks() { return this._placedBlocks; }
+    get currentPiece() { return this._currentPiece; }
+    get nextPiece() { return this._nextPiece; }
+    get score() { return this._score; }
+    get level() { return this._level; }
+    get lines() { return this._lines; }
 
     executeTick(moveX: number, rotateMove: number, dropSoft: boolean, dropHard: boolean) {
         this.ticks++;
 
-        this.tick(moveX, rotateMove);
+        this.handlePlayerInput(moveX, rotateMove);
 
         let actualTicksPerDrop = ticksPerDrop.normal;
-
         if (dropHard) {
             actualTicksPerDrop = ticksPerDrop.hard;
         } else if (dropSoft) {
@@ -174,9 +155,9 @@ export class TetrisLogic {
         this.ticks = 0;
     }
 
-    private tick(moveX: number, rotateMove: number) {
+    private handlePlayerInput(moveX: number, rotateMove: number) {
         if (canMovePiece(moveX, 0, this.currentPiece, this._placedBlocks)) {
-            this.currentPiece.x = this.currentPiece.x + moveX;
+            this.currentPiece.x += moveX;
         }
         if (canRotatePiece(rotateMove, this.currentPiece, this._placedBlocks)) {
             this.currentPiece.rotation = (this.currentPiece.rotation + rotateMove + 4) % 4;
@@ -185,13 +166,13 @@ export class TetrisLogic {
 
     private drop() {
         if (canMovePiece(0, 1, this.currentPiece, this._placedBlocks)) {
-            this.currentPiece.y = this.currentPiece.y + 1;
+            this.currentPiece.y++;
         } else {
             pushPieceBlocks(this.currentPiece, this._placedBlocks);
 
             this.clearLines();
 
-            this.resetPiece();
+            this.spawnNewPiece();
 
             if (!canMovePiece(0, 1, this.currentPiece, this._placedBlocks)) {
                 this.gameOver = true;
@@ -200,50 +181,45 @@ export class TetrisLogic {
     }
 
     private clearLines() {
-        while (true) {
-            const boardHeight = 27;
-            const boardWidth = 10;
+        const boardHeight = 27;
 
-            const fullLines = Array.from({length: boardHeight}, (_, i) => i)
-                .filter(y => this._placedBlocks.filter(b => b.y === y).length === boardWidth);
+        const fullLines = Array.from({length: boardHeight}, (_, i) => i)
+            .filter(y => this._placedBlocks.filter(b => b.y === y).length === BOARD_WIDTH);
 
-            if (fullLines.length === 0) {
-                break;
-            }
-
+        if (fullLines.length > 0) {
             this._lines += fullLines.length;
             this.updateScore(fullLines.length);
 
             const newPlacedBlocks: PlacedBlocks = [];
-            let newY = boardHeight - 1;
-            for (let y = boardHeight - 1; y >= 0; y--) {
-                if (!fullLines.includes(y)) {
-                    this._placedBlocks.filter(b => b.y === y).forEach(b => {
-                        newPlacedBlocks.push({x: b.x, y: newY});
-                    });
-                    newY--;
-                }
-            }
+            this._placedBlocks
+                .filter(block => !fullLines.includes(block.y))
+                .forEach(block => {
+                    const linesClearedBelow = fullLines.filter(y => y > block.y).length;
+                    newPlacedBlocks.push({x: block.x, y: block.y + linesClearedBelow});
+                });
             this._placedBlocks = newPlacedBlocks;
         }
     }
 
     private updateScore(clearedLines: number) {
-        const lineScores = [0, 40, 100, 300, 1200]; // For 0, 1, 2, 3, 4 lines
-        const score = clearedLines >= lineScores.length ? lineScores[lineScores.length - 1] : lineScores[clearedLines];
-        this._score += score * this._level;
-        this._level = Math.floor(this._lines / 10) + 1;
+        const lineScores = [0, 40, 100, 300, 1200];
+        const scoreForLines = lineScores[Math.min(clearedLines, lineScores.length - 1)];
+        this._score += scoreForLines * this._level;
+        this._level = Math.floor(this._lines / 10) + 1; // Level up every 10 lines
     }
 
-    private resetPiece() {
+    private spawnNewPiece() {
         this._currentPiece = {
             ...PieceStartingLocation,
             rotation: this._nextPiece.rotation,
             type: this._nextPiece.type,
         }
+        this._nextPiece = this.createNewPiece();
+    }
 
-        this._nextPiece = {
-
+    private createNewPiece(): MovablePiece {
+        return {
+            ...PieceStartingLocation,
             rotation: getRandomRotation(),
             type: getRandomPiece(),
         }

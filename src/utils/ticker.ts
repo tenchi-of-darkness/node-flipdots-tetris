@@ -1,16 +1,11 @@
-/**
- * Ticker - A requestAnimationFrame-like solution for Node.js
- * with controllable framerate
- */
-
 type TickerCallback =  ({ deltaTime, elapsedTime }: {deltaTime: number, elapsedTime: number}) => void;
 
 export class Ticker {
-    private fps: number;
+    private readonly fps: number;
     private callback: null | TickerCallback;
     private isRunning: boolean;
     private lastFrameTime: number;
-    private frameInterval: number;
+    private readonly frameInterval: number;
 	constructor(options = {fps: 60}) {
 		this.fps = options.fps;
 		this.callback = null;
@@ -31,11 +26,6 @@ export class Ticker {
 		return this;
 	}
 
-	stop() {
-		this.isRunning = false;
-		return this;
-	}
-
 	_tick() {
 		if (!this.isRunning) return;
 
@@ -43,10 +33,8 @@ export class Ticker {
 		const timeDelta = now - this.lastFrameTime;
 
 		if (timeDelta >= this.frameInterval) {
-			// Adjust for drifting
 			this.lastFrameTime = now - (timeDelta % this.frameInterval);
 
-			// Calculate normalized delta (1.0 = exact frame rate)
 			const normalizedDelta = timeDelta / this.frameInterval;
 
 			if (this.callback) {
@@ -57,7 +45,6 @@ export class Ticker {
 			}
 		}
 
-		// Use setImmediate for better performance in Node.js
 		setImmediate(() => this._tick());
 	}
 }

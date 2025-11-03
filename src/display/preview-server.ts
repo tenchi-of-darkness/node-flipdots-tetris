@@ -6,11 +6,11 @@ http
 		if (req.url === "/view") {
 			res.writeHead(200, { "Content-Type": "text/html" });
 			res.end(`
-      <html>
+      <html lang="en">
         <head>
         </head>
         <body style="margin:0;background:#666;display:flex;justify-content:center;align-items:center">
-            <img id="frame" src="/frame.png" style="image-rendering:pixelated; scale: 10; margin-top: 10rem">
+            <img id="frame" src="/frame.png" style="image-rendering:pixelated; scale: 10; margin-top: 10rem" alt="single frame of flipdot board">
             <script>
             function updateFrame(time) {
                 document.getElementById('frame').src = '/frame.png?t=' + time;

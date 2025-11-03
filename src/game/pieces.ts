@@ -1,8 +1,3 @@
-// The offsetPiece function is no longer needed and has been removed.
-
-// Each piece is now defined relative to a local origin (0,0),
-// instead of being pre-positioned on the game board.
-
 const LPiece0 = [{ x: 0, y: 1 }, { x: 1, y: 1 }, { x: 2, y: 1 }, { x: 2, y: 0 }];
 const LPiece1 = [{ x: 1, y: 0 }, { x: 1, y: 1 }, { x: 1, y: 2 }, { x: 2, y: 2 }];
 const LPiece2 = [{ x: 0, y: 1 }, { x: 1, y: 1 }, { x: 2, y: 1 }, { x: 0, y: 2 }];
