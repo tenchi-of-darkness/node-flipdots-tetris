@@ -73,6 +73,11 @@ export class Renderer {
         // Draw score
         if (gameData.length === 2) {
             this.drawScores(gameData[0], gameData[1]);
+        } else if (gameData.length === 1) {
+            const scoreX = 45;
+            this.ctx.textAlign = 'center';
+            this.ctx.fillText(`SCORE`, scoreX, 5);
+            this.ctx.fillText(`${gameData[0].score}`, scoreX, 15);
         }
 
         this.finalizeFrame();

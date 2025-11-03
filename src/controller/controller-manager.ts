@@ -1,4 +1,5 @@
 import GameController from "./game-controller.js";
+import {EventEmitter} from "events";
 
 export interface GameControllerState {
     buttonsPressed: number[];
@@ -8,6 +9,7 @@ export class ControllerManager {
     private liveControllerStates: GameControllerState[] = [];
     private oldControllerStates: GameControllerState[] = [];
     private controller: GameController;
+    private eventEmitter = new EventEmitter();
 
     constructor() {
         this.controller = new GameController();
@@ -15,6 +17,16 @@ export class ControllerManager {
 
     public async initialize() {
         await this.controller.init();
+
+        this.controller.on('GAMEPAD_CONNECTED', (msg) => {
+            const data = JSON.parse(msg);
+            this.eventEmitter.emit('connected', data.index);
+        });
+
+        this.controller.on('GAMEPAD_DISCONNECTED', (msg) => {
+            const data = JSON.parse(msg);
+            this.eventEmitter.emit('disconnected', data.index);
+        });
 
         this.controller.on('button', (btn) => {
             const button: { name: string, index: number, gamepad: number } = JSON.parse(btn);
@@ -28,6 +40,10 @@ export class ControllerManager {
                 this.liveControllerStates[button.gamepad].buttonsPressed.push(button.index);
             }
         });
+    }
+
+    public on(event: string, listener: (...args: any[]) => void) {
+        this.eventEmitter.on(event, listener);
     }
 
     public update() {

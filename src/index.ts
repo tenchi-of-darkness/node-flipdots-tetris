@@ -14,7 +14,21 @@ await controllerManager.initialize();
 // Initialize the ticker at x frames per second
 const ticker = new Ticker({fps: FPS});
 
-const games = [new Game(), new Game()];
+const games: { [index: number]: Game } = {};
+
+controllerManager.on('connected', (index: number) => {
+    if (Object.keys(games).length < 2 && !games[index]) {
+        console.log(`Adding game for controller ${index}`);
+        games[index] = new Game();
+    }
+});
+
+controllerManager.on('disconnected', (index: number) => {
+    if (games[index]) {
+        console.log(`Removing game for controller ${index}`);
+        delete games[index];
+    }
+});
 
 ticker.start(async ({deltaTime, elapsedTime}: { deltaTime: number, elapsedTime: number }) => {
     console.clear();
@@ -24,7 +38,10 @@ ticker.start(async ({deltaTime, elapsedTime}: { deltaTime: number, elapsedTime: 
 
     controllerManager.update();
 
-    const gameData = games.map((game, index) => game.executeTick(controllerManager.getControllerState(index)));
+    const activeControllers = Object.keys(games).map(Number);
+    const gameData = activeControllers.map(index => {
+        return games[index].executeTick(controllerManager.getControllerState(index));
+    });
 
     renderer.render(gameData);
 
