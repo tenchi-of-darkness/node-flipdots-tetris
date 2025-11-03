@@ -2,7 +2,7 @@ import {Pieces, PiecesKeyType} from "./pieces.js";
 import {getRandomPiece, getRandomRotation} from "./random.js";
 import {canMovePiece, canRotatePiece, MovablePiece, PlacedBlocks, pushPieceBlocks} from "./collision.js";
 import {getControllerIndexFromXbox} from "../controller/game-controller.js";
-import {GameControllerState} from "../controller/controller-state.js";
+import {GameControllerState} from "../controller/controller-manager.js";
 
 const PieceStartingLocation = {x: 4, y: 0}
 const BOARD_WIDTH = 10;

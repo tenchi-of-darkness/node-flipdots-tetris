@@ -8,7 +8,6 @@ export interface MovablePiece {
 }
 
 export const canMovePiece = (xMove: number, yMove: number, piece: MovablePiece, placedBlocks: PlacedBlocks) => {
-    console.log(piece.type, piece.rotation);
     for (const pieceBlock of Pieces[piece.type][piece.rotation]) {
         if (pieceBlock.y + piece.y + yMove > 26){
             return false;
@@ -27,7 +26,6 @@ export const canMovePiece = (xMove: number, yMove: number, piece: MovablePiece, 
 
 
 export const canRotatePiece = (rotationMove: number, piece: MovablePiece, placedBlocks: PlacedBlocks) => {
-    console.log(piece.type, piece.rotation);
     for (const pieceBlock of Pieces[piece.type][(piece.rotation + rotationMove+4)%4]) {
         if (pieceBlock.y + piece.y > 26){
             return false;

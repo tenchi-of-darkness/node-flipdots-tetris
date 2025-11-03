@@ -1,14 +1,9 @@
 import {Pieces, PiecesKeyType} from "./pieces.js";
 
-export const getRandomPiece = () => {
-    const pieceTypes = Object.keys(Pieces);
-
-    const randomType = Math.floor(Math.random() * pieceTypes.length);
-
-    const keyAny: any = pieceTypes[randomType];
-    const key: PiecesKeyType = keyAny;
-
-    return key
+export const getRandomPiece = (): PiecesKeyType => {
+    const pieceTypes = Object.keys(Pieces) as PiecesKeyType[];
+    const randomTypeIndex = Math.floor(Math.random() * pieceTypes.length);
+    return pieceTypes[randomTypeIndex];
 }
 
 export const getRandomRotation = () => {
