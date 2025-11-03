@@ -92,7 +92,7 @@ const getNextBoardX = () => {
         firstBoard = false;
         return boardX;
     } else {
-        return boardX+=14;
+        return boardX+=70;
     }
 }
 
@@ -115,6 +115,7 @@ await initializeControllerState();
 
 //Working controller test code
 const game1 = new Game();
+const game2 = new Game();
 
 ticker.start(({deltaTime, elapsedTime}: {deltaTime: number, elapsedTime: number}) => {
     console.clear();
@@ -130,14 +131,28 @@ ticker.start(({deltaTime, elapsedTime}: {deltaTime: number, elapsedTime: number}
 
     const controllerState = updateControllerState();
     const gameData1 = game1.executeTick(controllerState);
+    const gameData2 = game2.executeTick(controllerState);
 
     // Display the word
     {
         ctx.fillStyle = "#fff";
         ctx.strokeStyle = "#fff";
-        ctx.font = '14px Dotmap';
+        ctx.font = '10.1px monospace';
+        ctx.textAlign = "center";
 
         drawBoard(gameData1);
+        drawBoard(gameData2);
+
+        {
+            const scoreX = 26;
+            ctx.textAlign = 'left';
+            ctx.fillText(`SCORE`, scoreX, -3);
+            ctx.fillText(`${gameData1.score}`, scoreX-13, 6);
+            ctx.fillText(`${gameData2.score}`, scoreX+16, 6);
+            ctx.fillRect(scoreX+15, 7, 1, 21);
+            ctx.fillRect(scoreX-12, 7, 56, 1);
+            // ctx.fillText(`LEVEL:${gameData1.level}`, scoreX, );
+        }
 
         resetRenderBoardX();
     }
