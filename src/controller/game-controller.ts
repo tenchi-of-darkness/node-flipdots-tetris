@@ -70,14 +70,14 @@ export default class GameController {
 
                     const axesSum = gp.axes.reduce((sum, axis) => sum + Math.abs(axis), 0);
                     if (axesSum > noiseThreshold) {
-                        window.sendEventToProcessHandle('thumbsticks', gp.axes);
+                        window.sendEventToProcessHandle('thumbsticks', { axes: gp.axes, gamepad: gp.index });
                     }
 
                     for (let i = 0; i < gp.buttons.length; i++) {
                         if (gp.buttons[i].pressed) {
                             const buttonName = buttons[i] || `Button ${i}`;
-                            window.sendEventToProcessHandle(buttonName, { pressed: true });
-                            window.sendEventToProcessHandle('button', { name: buttonName, index: i });
+                            window.sendEventToProcessHandle(buttonName, { pressed: true, gamepad: gp.index });
+                            window.sendEventToProcessHandle('button', { name: buttonName, index: i, gamepad: gp.index });
                         }
                     }
                 }, pollInterval);

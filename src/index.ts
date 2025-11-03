@@ -7,7 +7,7 @@ import {Display} from "@owowagency/flipdot-emu";
 import "./preview.js";
 import {Game, GameData} from "./tetris/game.js";
 import GameController from "./controller/game-controller.js";
-import {initializeControllerState, updateControllerState} from "./controller/controller-state.js";
+import {getControllerState, initializeControllerState, updateControllerStates} from "./controller/controller-state.js";
 
 const IS_DEV = process.argv.includes("--dev");
 
@@ -129,9 +129,9 @@ ticker.start(({deltaTime, elapsedTime}: {deltaTime: number, elapsedTime: number}
     ctx.fillStyle = "#000";
     ctx.fillRect(0, 0, width, height);
 
-    const controllerState = updateControllerState();
-    const gameData1 = game1.executeTick(controllerState);
-    const gameData2 = game2.executeTick(controllerState);
+    updateControllerStates();
+    const gameData1 = game1.executeTick(getControllerState(0));
+    const gameData2 = game2.executeTick(getControllerState(1));
 
     // Display the word
     {
