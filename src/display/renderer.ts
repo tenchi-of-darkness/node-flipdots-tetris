@@ -68,10 +68,7 @@ export class Renderer {
      */
     private registerFonts() {
         const fontsDir = path.resolve(import.meta.dirname, "../../fonts");
-        registerFont(path.join(fontsDir, "init-pidmobil-3-led-dotmap.ttf"), {family: "Dotmap"});
-        registerFont(path.join(fontsDir, "OpenSans-Variable.ttf"), {family: "OpenSans"});
-        registerFont(path.join(fontsDir, "PPNeueMontrealMono-Regular.ttf"), {family: "PPNeueMontreal"});
-        registerFont(path.join(fontsDir, "Px437_ACM_VGA.ttf"), {family: "Px437_ACM_VGA"});
+        registerFont(path.join(fontsDir, "QuinqueFive.ttf"), {family: "QuinqueFive"});
     }
 
     /**
@@ -103,7 +100,7 @@ export class Renderer {
     private prepareContext() {
         this.ctx.fillStyle = "#fff";
         this.ctx.strokeStyle = "#fff";
-        this.ctx.font = '10.1px monospace';
+        this.ctx.font = '5px QuinqueFive';
     }
 
     private drawBoard(gameData: GameData, boardX: number) {
