@@ -107,6 +107,11 @@ export class Renderer {
     }
 
     private drawBoard(gameData: GameData, boardX: number) {
+        if (gameData.gameOver) {
+            this.ctx.fillText('GAME', boardX + 12, 4);
+            this.ctx.fillText('OVER', boardX + 12, 14);
+            return;
+        }
         this.drawBoardOutline(this.ctx, boardX);
         const {x, y, rotation, piece} = gameData.currentPiece;
         this.drawMovingPiece(this.ctx, boardX, x, y, piece[rotation]);

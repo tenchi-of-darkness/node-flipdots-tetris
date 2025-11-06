@@ -32,6 +32,7 @@ export interface GameData {
     score: number;
     level: number;
     lines: number;
+    gameOver?: boolean;
 }
 
 export class TetrisGameAdapter {
@@ -48,7 +49,20 @@ export class TetrisGameAdapter {
 
     executeTick(controllerState: GamepadState): GameData {
         if (this.game.gameOver) {
-            this.game = new TetrisGame();
+            return {
+                currentPiece: {
+                    x: this.game.currentPiece.x,
+                    y: this.game.currentPiece.y,
+                    rotation: this.game.currentPiece.rotation,
+                    piece: Pieces[this.game.currentPiece.type]
+                },
+                nextPiece: {rotation: this.game.nextPiece.rotation, piece: Pieces[this.game.nextPiece.type]},
+                blockGrid: this.game.placedBlocks,
+                score: this.game.score,
+                level: this.game.level,
+                lines: this.game.lines,
+                gameOver: this.game.gameOver,
+            };
         }
 
         const {moveHorizontal, moveRotation, dropHard, dropSoft} = this.handleInput(controllerState);
@@ -67,6 +81,7 @@ export class TetrisGameAdapter {
             score: this.game.score,
             level: this.game.level,
             lines: this.game.lines,
+            gameOver: this.game.gameOver,
         }
     }
 
