@@ -68,10 +68,7 @@ export class Renderer {
      */
     private registerFonts() {
         const fontsDir = path.resolve(import.meta.dirname, "../../fonts");
-        registerFont(path.join(fontsDir, "init-pidmobil-3-led-dotmap.ttf"), {family: "Dotmap"});
-        registerFont(path.join(fontsDir, "OpenSans-Variable.ttf"), {family: "OpenSans"});
-        registerFont(path.join(fontsDir, "PPNeueMontrealMono-Regular.ttf"), {family: "PPNeueMontreal"});
-        registerFont(path.join(fontsDir, "Px437_ACM_VGA.ttf"), {family: "Px437_ACM_VGA"});
+        registerFont(path.join(fontsDir, "QuinqueFive.ttf"), {family: "QuinqueFive"});
     }
 
     /**
@@ -103,7 +100,7 @@ export class Renderer {
     private prepareContext() {
         this.ctx.fillStyle = "#fff";
         this.ctx.strokeStyle = "#fff";
-        this.ctx.font = '10.1px monospace';
+        this.ctx.font = '11px QuinqueFive';
     }
 
     private drawBoard(gameData: GameData, boardX: number) {
@@ -148,11 +145,11 @@ export class Renderer {
     private drawTwoPlayerScore(gameData1: GameData, gameData2: GameData) {
         const scoreX = 26;
         this.ctx.textAlign = 'left';
-        this.ctx.fillText(`SCORE`, scoreX, -3);
-        this.ctx.fillText(`${gameData1.score}`, scoreX - 13, 6);
-        this.ctx.fillText(`${gameData2.score}`, scoreX + 16, 6);
-        this.ctx.fillRect(scoreX + 15, 7, 1, 21);
-        this.ctx.fillRect(scoreX - 12, 7, 56, 1);
+        this.ctx.fillText(`SCORE`, scoreX, -4);
+        this.ctx.fillText(`${gameData1.score}`, scoreX - 12, 8);
+        this.ctx.fillText(`${gameData2.score}`, scoreX + 17, 8);
+        this.ctx.fillRect(scoreX + 15, 9, 1, 21);
+        this.ctx.fillRect(scoreX - 12, 9, 56, 1);
     }
 
     /**
