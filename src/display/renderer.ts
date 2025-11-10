@@ -82,6 +82,14 @@ export class Renderer {
         this.clearCanvas();
         this.prepareContext();
 
+        // ADDED: show a start screen when there are no active games yet.
+        // logic: if no TetrisGameAdapter exists for any controller, gameData is empty.
+        if (!gameData || gameData.length === 0) {
+            this.drawStartScreen();
+            this.finalizeFrame();
+            return;
+        }
+
         // Draw each active game board.
         gameData.forEach((data, index) => {
             const boardX = 1 + index * 70;
@@ -92,6 +100,16 @@ export class Renderer {
         this.drawScores(gameData);
 
         this.finalizeFrame();
+    }
+
+        // ADDED: start screen renderer
+        private drawStartScreen(): void {
+            this.ctx.textAlign = 'center';
+            this.ctx.font = '10.1px Px437_ACM_VGA';
+
+        const cx = Math.floor(this.canvas.width / 2);
+        this.ctx.fillText('PRESS', cx, 1);
+        this.ctx.fillText('ANY BUTTON', cx, 12.5);
     }
 
     private clearCanvas() {
