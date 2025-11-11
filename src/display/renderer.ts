@@ -5,6 +5,7 @@ import fs from "node:fs";
 import path from "node:path";
 import {GameData} from "../game/index.js";
 import {LAYOUT} from "../config/index.js";
+import { register } from "node:module";
 
 /**
  * The Renderer class is responsible for all drawing operations. It takes game state data
@@ -69,6 +70,7 @@ export class Renderer {
     private registerFonts() {
         const fontsDir = path.resolve(import.meta.dirname, "../../fonts");
         registerFont(path.join(fontsDir, "QuinqueFive.ttf"), {family: "QuinqueFive"});
+        registerFont(path.join(fontsDir, "QuinqueFive.otf"), {family: "QuinqueFiveOTF"});
     }
 
     /**
@@ -100,15 +102,10 @@ export class Renderer {
     private prepareContext() {
         this.ctx.fillStyle = "#fff";
         this.ctx.strokeStyle = "#fff";
-        this.ctx.font = '5px QuinqueFive';
+        this.ctx.font = '5px QuinqueFiveOTF';
     }
 
-    private drawBoard(gameData: GameData, boardX: number) {
-        if (gameData.gameOver) {
-            this.ctx.fillText('GAME', boardX + 12, 4);
-            this.ctx.fillText('OVER', boardX + 12, 14);
-            return;
-        }
+   private drawBoard(gameData: GameData, boardX: number) {
         this.drawBoardOutline(this.ctx, boardX);
         const {x, y, rotation, piece} = gameData.currentPiece;
         this.drawMovingPiece(this.ctx, boardX, x, y, piece[rotation]);
