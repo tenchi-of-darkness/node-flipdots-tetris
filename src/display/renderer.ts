@@ -151,15 +151,15 @@ export class Renderer {
         const textY = 5;
 
         drawText(this.ctx, "SCORE", scoreX - 15, textY);
-        drawText(this.ctx, `${gameData.score}`, scoreX - 3, textY + 8);
+        drawText(this.ctx, `${gameData.score}`, scoreX - 15, textY + 8);
     }
 
     private drawTwoPlayerScore(gameData1: GameData, gameData2: GameData) {
         const scoreX = 26;
         this.ctx.textAlign = 'left';
-        drawText(this.ctx, "SCORE", scoreX, -3);
-        drawText(this.ctx, `${gameData1.score}`, scoreX - 13, 8);
-        drawText(this.ctx, `${gameData2.score}`, scoreX + 16, 8);
+        drawText(this.ctx, "SCORE", scoreX, 1);
+        drawText(this.ctx, `${gameData1.score}`, scoreX - 12, 9);
+        drawText(this.ctx, `${gameData2.score}`, scoreX + 17, 9);
         this.ctx.fillRect(scoreX + 15, 7, 1, 21);
         this.ctx.fillRect(scoreX - 12, 7, 56, 1);
     }
