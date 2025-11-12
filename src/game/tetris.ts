@@ -13,6 +13,7 @@ const buttonMapping = {
     softDrop: "D_PAD_DOWN",
     rotateCW: "B",
     rotateCCW: "A",
+    pause: "BUTTON_MENU",
 };
 
 type ButtonStates = Record<keyof typeof buttonMapping, boolean>;
@@ -44,16 +45,23 @@ export class TetrisGameAdapter {
         softDrop: false,
         rotateCW: false,
         rotateCCW: false,
+        pause: false,
     };
+
+    // executeTick(controllerState: ButtonStates): ButtonStates {
+    //     if (this.lastButtonStates.pause && !controllerState.pause) {
+    //         console.log("Game paused/resumed (not implemented)");
+    // }
 
     executeTick(controllerState: GamepadState): GameData {
         if (this.game.gameOver) {
             this.game = new TetrisGame();
+            
         }
 
-        const {moveHorizontal, moveRotation, dropHard, dropSoft} = this.handleInput(controllerState);
+        const {moveHorizontal, moveRotation, dropHard, dropSoft, pause} = this.handleInput(controllerState);
 
-        this.game.executeTick(moveHorizontal, moveRotation, dropSoft, dropHard);
+        this.game.executeTick(moveHorizontal, moveRotation, dropSoft, dropHard, pause);
 
         return {
             currentPiece: {
@@ -98,10 +106,11 @@ export class TetrisGameAdapter {
         
         const dropHard = currentButtonStates.hardDrop;
         const dropSoft = currentButtonStates.softDrop;
+        const pause = currentButtonStates.pause;
 
         this.lastButtonStates = currentButtonStates;
 
-        return {moveHorizontal, moveRotation, dropHard, dropSoft};
+        return {moveHorizontal, moveRotation, dropHard, dropSoft, pause};
     }
 }
 
@@ -134,7 +143,7 @@ export class TetrisGame {
     get level() { return this._level; }
     get lines() { return this._lines; }
 
-    executeTick(moveX: number, rotateMove: number, dropSoft: boolean, dropHard: boolean) {
+    executeTick(moveX: number, rotateMove: number, dropSoft: boolean, dropHard: boolean, pause: boolean) {
         this.ticks++;
 
         this.handlePlayerInput(moveX, rotateMove);
@@ -153,6 +162,11 @@ export class TetrisGame {
         this.drop();
 
         this.ticks = 0;
+
+        if (pause) {
+            
+            return;
+        }
     }
 
     private handlePlayerInput(moveX: number, rotateMove: number) {
