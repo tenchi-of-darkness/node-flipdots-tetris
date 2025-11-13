@@ -90,3 +90,4 @@ The `src/config/settings.ts` file contains basic configuration options for the g
 
 ##  Improvements and recommendations
 In this stage of the application is the use of an Xbox controller not supported when starting the application on a windows machine because of the headless browser doesn't handle the input for the controller as expected. It will work on Mac OS(Apple) and Linux.
+If running the application in Windows it is recommended to connect the controllers via bluetooth.
