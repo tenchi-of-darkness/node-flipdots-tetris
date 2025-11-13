@@ -122,6 +122,8 @@ const ticksPerDropBase = {
     hard: 1,
 };
 
+let newGameIndex = 0;
+
 export class TetrisGame {
     gameOver: boolean = false;
     private ticks: number = 0;
@@ -132,6 +134,8 @@ export class TetrisGame {
     private _score: number = 0;
     private _level: number = 1;
     private _lines: number = 0;
+
+    public _gameIndex = newGameIndex++;
 
     constructor() {
         this._currentPiece = this.createNewPiece();
@@ -238,7 +242,7 @@ export class TetrisGame {
         return {
             ...PieceStartingLocation,
             rotation: getRandomRotation(),
-            type: getRandomPiece(),
+            type: getRandomPiece(this._gameIndex),
         }
     }
 }
