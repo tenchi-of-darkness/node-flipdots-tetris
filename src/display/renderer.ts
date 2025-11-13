@@ -114,8 +114,8 @@ export class Renderer {
         this.ctx.textAlign = 'center';
         const cx = 12;
         const cy = 7;
-        drawText(this.ctx, 'PRESS', cx+15, cy);
-        drawText(this.ctx,'ANY BUTTON', cx, cy+7.5);
+        drawText(this.ctx, 'PRESS ', cx+15, cy);
+        drawText(this.ctx,'ANY BUTTON', cx, cy+7);
     }
 
     private clearCanvas() {
