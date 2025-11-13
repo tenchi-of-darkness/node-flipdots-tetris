@@ -112,9 +112,10 @@ export class Renderer {
 
     private drawStartScreen(): void {
         this.ctx.textAlign = 'center';
-        const cx = Math.floor(this.canvas.width / 2);
-        this.ctx.fillText('PRESS', cx, -2);
-        this.ctx.fillText('ANY BUTTON', cx, 9.5);
+        const cx = 12;
+        const cy = 7;
+        drawText(this.ctx, 'PRESS', cx+15, cy);
+        drawText(this.ctx,'ANY BUTTON', cx, cy+7.5);
     }
 
     private clearCanvas() {
