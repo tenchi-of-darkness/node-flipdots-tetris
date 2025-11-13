@@ -13,6 +13,7 @@ const buttonMapping = {
     softDrop: "D_PAD_DOWN",
     rotateCW: "B",
     rotateCCW: "A",
+    restart: "Y",
 };
 
 type ButtonStates = Record<keyof typeof buttonMapping, boolean>;
@@ -45,9 +46,27 @@ export class TetrisGameAdapter {
         softDrop: false,
         rotateCW: false,
         rotateCCW: false,
+        restart: false,
     };
 
     executeTick(controllerState: GamepadState): GameData {
+
+        const {moveHorizontal, moveRotation, dropHard, dropSoft, restartPressed} = this.handleInput(controllerState);
+
+        if (this.game.gameOver && restartPressed) {
+            this.game = new TetrisGame();
+            this.lastButtonStates = {
+                left: false,
+                right: false,
+                hardDrop: false,
+                softDrop: false,
+                rotateCW: false,
+                rotateCCW: false,
+                restart: false,
+            };
+            return this.executeTick(controllerState);
+        }
+
         if (this.game.gameOver) {
             return {
                 currentPiece: {
@@ -64,8 +83,6 @@ export class TetrisGameAdapter {
                 gameOver: this.game.gameOver,
             };
         }
-
-        const {moveHorizontal, moveRotation, dropHard, dropSoft} = this.handleInput(controllerState);
 
         this.game.executeTick(moveHorizontal, moveRotation, dropSoft, dropHard);
 
@@ -97,6 +114,8 @@ export class TetrisGameAdapter {
             return currentButtonStates[action] && !this.lastButtonStates[action];
         };
 
+        const restartPressed = wasJustPressed('restart');
+
         let moveHorizontal = 0;
         if (wasJustPressed('right')) {
             moveHorizontal = 1;
@@ -116,7 +135,7 @@ export class TetrisGameAdapter {
 
         this.lastButtonStates = currentButtonStates;
 
-        return {moveHorizontal, moveRotation, dropHard, dropSoft};
+        return {moveHorizontal, moveRotation, dropHard, dropSoft, restartPressed};
     }
 }
 
