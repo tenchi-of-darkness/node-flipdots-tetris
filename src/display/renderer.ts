@@ -157,7 +157,7 @@ export class Renderer {
     private drawTwoPlayerScore(gameData1: GameData, gameData2: GameData) {
         const scoreX = 26;
         this.ctx.textAlign = 'left';
-        drawText(this.ctx, "SCORE", scoreX, 1);
+        drawText(this.ctx, "SCORE", scoreX+1, 1);
         drawText(this.ctx, `${gameData1.score}`, scoreX - 12, 9);
         drawText(this.ctx, `${gameData2.score}`, scoreX + 17, 9);
         this.ctx.fillRect(scoreX + 15, 7, 1, 21);
