@@ -138,12 +138,25 @@ export class TetrisGameAdapter {
         return {moveHorizontal, moveRotation, dropHard, dropSoft, restartPressed};
     }
 }
+//
+// const ticksPerDrop = {
+//     normal: 5,
+//     soft: 3,
+//     hard: 1,
+// };
 
-const ticksPerDrop = {
+function getTicksPerDrop(level: number, dropType: keyof typeof ticksPerDropBase): number {
+    const base = ticksPerDropBase[dropType];
+    const speedIncrease = Math.min(level - 1, 20);
+    return Math.max(1, base - Math.floor(speedIncrease / 2));
+}
+const ticksPerDropBase = {
     normal: 5,
     soft: 3,
     hard: 1,
 };
+
+let newGameIndex = 0;
 
 export class TetrisGame {
     gameOver: boolean = false;
@@ -155,6 +168,8 @@ export class TetrisGame {
     private _score: number = 0;
     private _level: number = 1;
     private _lines: number = 0;
+
+    public _gameIndex = newGameIndex++;
 
     constructor() {
         this._currentPiece = this.createNewPiece();
@@ -173,12 +188,18 @@ export class TetrisGame {
 
         this.handlePlayerInput(moveX, rotateMove);
 
-        let actualTicksPerDrop = ticksPerDrop.normal;
-        if (dropHard) {
-            actualTicksPerDrop = ticksPerDrop.hard;
-        } else if (dropSoft) {
-            actualTicksPerDrop = ticksPerDrop.soft;
-        }
+        let dropType: keyof typeof ticksPerDropBase = 'normal';
+        if (dropHard) dropType = 'hard';
+        else if (dropSoft) dropType = 'soft';
+
+        const actualTicksPerDrop = getTicksPerDrop(this._level, dropType);
+
+        // let actualTicksPerDrop = ticksPerDrop.normal;
+        // if (dropHard) {
+        //     actualTicksPerDrop = ticksPerDrop.hard;
+        // } else if (dropSoft) {
+        //     actualTicksPerDrop = ticksPerDrop.soft;
+        // }
 
         if (this.ticks <= actualTicksPerDrop) {
             return;
@@ -255,7 +276,7 @@ export class TetrisGame {
         return {
             ...PieceStartingLocation,
             rotation: getRandomRotation(),
-            type: getRandomPiece(),
+            type: getRandomPiece(this._gameIndex),
         }
     }
 }
