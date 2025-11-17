@@ -136,6 +136,15 @@ export class Renderer {
     }
 
     private drawSinglePlayerScore(gameData: GameData) {
+        //singele player pause
+        if (gameData.paused) {
+            this.ctx.textAlign = 'center';
+            const cx = this.display.width / 2;
+            const cy = this.display.height / 2;
+
+            this.ctx.fillText(`PAUSED`, cx, cy - 6);
+            return
+        }
         const scoreX = 45;
         this.ctx.textAlign = 'center';
         this.ctx.fillText(`SCORE`, scoreX, 5);
@@ -143,6 +152,16 @@ export class Renderer {
     }
 
     private drawTwoPlayerScore(gameData1: GameData, gameData2: GameData) {
+        //two player pause
+        if (gameData1.paused || gameData2.paused) {
+            this.ctx.textAlign = 'center';
+            const cx = this.display.width / 2;
+            // const cy = this.display.height / 2;
+            this.ctx.fillText(`PAUSED`, cx, 10);
+            return;
+        }
+
+
         const scoreX = 26;
         this.ctx.textAlign = 'left';
         this.ctx.fillText(`SCORE`, scoreX, -4);
