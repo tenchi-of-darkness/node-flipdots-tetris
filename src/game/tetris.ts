@@ -33,6 +33,7 @@ export interface GameData {
     score: number;
     level: number;
     lines: number;
+    paused: boolean;
 }
 
 export class TetrisGameAdapter {
@@ -48,10 +49,8 @@ export class TetrisGameAdapter {
         pause: false,
     };
 
-    // executeTick(controllerState: ButtonStates): ButtonStates {
-    //     if (this.lastButtonStates.pause && !controllerState.pause) {
-    //         console.log("Game paused/resumed (not implemented)");
-    // }
+    // pause: tracking paused state in the adapter
+    private paused = false;
 
     executeTick(controllerState: GamepadState): GameData {
         if (this.game.gameOver) {
@@ -59,9 +58,20 @@ export class TetrisGameAdapter {
             
         }
 
-        const {moveHorizontal, moveRotation, dropHard, dropSoft, pause} = this.handleInput(controllerState);
+        const {moveHorizontal, moveRotation, dropHard, dropSoft, pausePressed} = this.handleInput(controllerState);
 
-        this.game.executeTick(moveHorizontal, moveRotation, dropSoft, dropHard, pause);
+    // pause: toggle pause on edge (just-pressed)
+    if (pausePressed) {
+        this.paused = !this.paused;
+    }
+
+        // pause: only advance the game when not paused
+    if (!this.paused) {
+        this.game.executeTick(moveHorizontal, moveRotation, dropSoft, dropHard, /* paused */ false);
+    } else {
+        // while paused, don't advance ticks or apply moves
+        this.game.executeTick(0, 0, false, false, /* paused */ true);
+    }
 
         return {
             currentPiece: {
@@ -75,6 +85,7 @@ export class TetrisGameAdapter {
             score: this.game.score,
             level: this.game.level,
             lines: this.game.lines,
+            paused: this.paused,
         }
     }
 
@@ -106,11 +117,12 @@ export class TetrisGameAdapter {
         
         const dropHard = currentButtonStates.hardDrop;
         const dropSoft = currentButtonStates.softDrop;
-        const pause = currentButtonStates.pause;
+        
+        const pausePressed = wasJustPressed('pause');
 
         this.lastButtonStates = currentButtonStates;
 
-        return {moveHorizontal, moveRotation, dropHard, dropSoft, pause};
+        return {moveHorizontal, moveRotation, dropHard, dropSoft, pausePressed};
     }
 }
 
@@ -144,6 +156,12 @@ export class TetrisGame {
     get lines() { return this._lines; }
 
     executeTick(moveX: number, rotateMove: number, dropSoft: boolean, dropHard: boolean, pause: boolean) {
+
+        //pause: freeze everything when paused
+        if (pause) {
+            return;
+        }
+
         this.ticks++;
 
         this.handlePlayerInput(moveX, rotateMove);
@@ -163,10 +181,6 @@ export class TetrisGame {
 
         this.ticks = 0;
 
-        if (pause) {
-            
-            return;
-        }
     }
 
     private handlePlayerInput(moveX: number, rotateMove: number) {
