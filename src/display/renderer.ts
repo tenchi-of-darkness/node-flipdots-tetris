@@ -131,8 +131,8 @@ export class Renderer {
 
     private drawBoard(gameData: GameData, boardX: number) {
         if (gameData.gameOver) {
-            this.ctx.fillText('GAME', boardX + 12, 4);
-            this.ctx.fillText('OVER', boardX + 12, 14);
+            drawText(this.ctx, 'GAME', boardX + 2, 7);
+            drawText(this.ctx, 'OVER', boardX + 2, 17);
             return;
         }
         this.drawBoardOutline(this.ctx, boardX);
