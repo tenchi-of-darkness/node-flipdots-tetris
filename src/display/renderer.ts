@@ -167,12 +167,13 @@ export class Renderer {
     private drawSinglePlayerScore(gameData: GameData) {
         //singele player pause
         if (gameData.paused) {
-            this.ctx.textAlign = 'center';
-            const cx = this.display.width / 2;
-            const cy = this.display.height / 2;
+            const pauseText = "PAUSED";
+            const textWidth = pauseText.length * 6 - 1;
+            const startX = Math.floor((this.display.width - textWidth) / 2);
+            const startY = Math.floor(this.display.height / 2) - 6;
 
-            this.ctx.fillText(`PAUSED`, cx, cy - 6);
-            return
+            drawText(this.ctx, pauseText, startX, startY);
+            return;
         }
         const scoreX = 45;
         const textY = 5;
@@ -184,10 +185,10 @@ export class Renderer {
     private drawTwoPlayerScore(gameData1: GameData, gameData2: GameData) {
         //two player pause
         if (gameData1.paused || gameData2.paused) {
-            this.ctx.textAlign = 'center';
-            const cx = this.display.width / 2;
-            // const cy = this.display.height / 2;
-            this.ctx.fillText(`PAUSED`, cx, 10);
+            const pauseText = "PAUSED";
+            const textWidth = pauseText.length * 6 - 1;
+            const startX = Math.floor((this.display.width - textWidth) / 2);
+            drawText(this.ctx, pauseText, startX, 10);
             return;
         }
 
