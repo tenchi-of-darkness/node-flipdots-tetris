@@ -95,8 +95,12 @@ export class TetrisGameAdapter {
         } else if (wasJustPressed('rotateCCW')) {
             moveRotation = -1;
         }
-        
-        const dropHard = currentButtonStates.hardDrop;
+
+        let dropHard = false;
+        if (wasJustPressed('hardDrop')) {
+            dropHard = true;
+        }
+
         const dropSoft = currentButtonStates.softDrop;
 
         this.lastButtonStates = currentButtonStates;
@@ -104,22 +108,19 @@ export class TetrisGameAdapter {
         return {moveHorizontal, moveRotation, dropHard, dropSoft};
     }
 }
-//
-// const ticksPerDrop = {
-//     normal: 5,
-//     soft: 3,
-//     hard: 1,
-// };
 
 function getTicksPerDrop(level: number, dropType: keyof typeof ticksPerDropBase): number {
     const base = ticksPerDropBase[dropType];
+    if (base === 0){
+        return 0;
+    }
     const speedIncrease = Math.min(level - 1, 20);
     return Math.max(1, base - Math.floor(speedIncrease / 2));
 }
 const ticksPerDropBase = {
     normal: 5,
-    soft: 3,
-    hard: 1,
+    soft: 1,
+    hard: 0,
 };
 
 let newGameIndex = 0;
@@ -160,12 +161,13 @@ export class TetrisGame {
 
         const actualTicksPerDrop = getTicksPerDrop(this._level, dropType);
 
-        // let actualTicksPerDrop = ticksPerDrop.normal;
-        // if (dropHard) {
-        //     actualTicksPerDrop = ticksPerDrop.hard;
-        // } else if (dropSoft) {
-        //     actualTicksPerDrop = ticksPerDrop.soft;
-        // }
+        if (actualTicksPerDrop === 0){
+            while (true){
+                if (!this.drop()){
+                    return;
+                }
+            }
+        }
 
         if (this.ticks <= actualTicksPerDrop) {
             return;
@@ -188,6 +190,7 @@ export class TetrisGame {
     private drop() {
         if (canMovePiece(0, 1, this.currentPiece, this._placedBlocks)) {
             this.currentPiece.y++;
+            return true
         } else {
             pushPieceBlocks(this.currentPiece, this._placedBlocks);
 
@@ -198,6 +201,7 @@ export class TetrisGame {
             if (!canMovePiece(0, 1, this.currentPiece, this._placedBlocks)) {
                 this.gameOver = true;
             }
+            return false;
         }
     }
 
