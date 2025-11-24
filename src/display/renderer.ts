@@ -196,28 +196,16 @@ export class Renderer {
     }
 
     private drawTwoPlayerScore(gameData1: GameData, gameData2: GameData) {
-        let score1 = 0;
-        let score2 = 0;
         if (gameData1.gameOver && gameData2.gameOver) {
-            // let score1X = 10;
-            // if (gameData1.score >= 10) score1X = 7;
-            // if (gameData1.score >= 100) score1X = 5
-            // if (gameData1.score >= 1000) score1X = 1;
-
-            // let score2X = 69;
-            // if (gameData2.score >= 10) score2X = 66;
-            // if (gameData2.score >= 100) score2X = 64;
-            // if (gameData2.score >= 1000) score2X = 60;
-
             let score1X = 10;
-            if (score1 >= 10) score1X = 7;
-            if (score1 >= 100) score1X = 5
-            if (score1 >= 1000) score1X = 1;
+            if (gameData1.score >= 10) score1X = 7;
+            if (gameData1.score >= 100) score1X = 5
+            if (gameData1.score >= 1000) score1X = 1;
 
             let score2X = 69;
-            if (score2 >= 10) score2X = 66;
-            if (score2 >= 100) score2X = 64;
-            if (score2 >= 1000) score2X = 60;
+            if (gameData2.score >= 10) score2X = 66;
+            if (gameData2.score >= 100) score2X = 64;
+            if (gameData2.score >= 1000) score2X = 60;
 
             if (gameData1.score > gameData2.score) {
                 drawText(this.ctx, "P1 WINS", 21, 1);
@@ -227,47 +215,40 @@ export class Renderer {
                 drawText(this.ctx, "DRAW", 30, 2);
             }
             drawText(this.ctx, 'P1', 7, 12);
-            drawText(this.ctx, `${score1}`, score1X, 20);
+            drawText(this.ctx, `${gameData1.score}`, score1X, 20);
             drawText(this.ctx, 'P2', 66, 12);
-            drawText(this.ctx, `${score2}`, score2X, 20);
+            drawText(this.ctx, `${gameData2.score}`, score2X, 20);
 
             return;
         } else if (gameData1.gameOver) {
-
-            // let score1X = 19;
-            // if (gameData1.score >= 10) score1X = 16;
-            // if (gameData1.score >= 100) score1X = 14
-            // if (gameData1.score >= 1000) score1X = 10;
-
             let score1X = 19;
-            if (score1 >= 10) score1X = 16;
-            if (score1 >= 100) score1X = 13
-            if (score1 >= 1000) score1X = 10;
-
+            if (gameData1.score >= 10) score1X = 16;
+            if (gameData1.score >= 100) score1X = 13;
+            if (gameData1.score >= 1000) score1X = 10;
 
             this.ctx.fillRect(43, 0, 1, 28);
             this.ctx.fillRect(43, 7, 28, 1);
             drawText(this.ctx, 'P2', 52, 1);
-            drawText(this.ctx, `${score1}`, score1X, 22);
-            drawText(this.ctx, `${score2}`, 46, 10);
+            drawText(this.ctx, `${gameData1.score}`, score1X, 22);
+            drawText(this.ctx, `${gameData2.score}`, 46, 10);
             return;
         } else if (gameData2.gameOver) {
             let score2X = 60;
-            if (score2 >= 10) score2X = 57;
-            if (score2 >= 100) score2X = 54;
-            if (score2 >= 1000) score2X = 51;
+            if (gameData2.score >= 10) score2X = 57;
+            if (gameData2.score >= 100) score2X = 54;
+            if (gameData2.score >= 1000) score2X = 51;
 
             this.ctx.fillRect(40, 0, 1, 28);
             this.ctx.fillRect(13, 7, 28, 1);
             drawText(this.ctx, 'P1', 21, 1);
-            drawText(this.ctx, `${score1}`, 15, 10);
-            drawText(this.ctx, `${score2}`, score2X, 22);
+            drawText(this.ctx, `${gameData1.score}`, 15, 10);
+            drawText(this.ctx, `${gameData2.score}`, score2X, 22);
             return;
         }
 
         drawText(this.ctx, "SCORE", 27, 1);
-        drawText(this.ctx, `${score1}`, 15, 10);
-        drawText(this.ctx, `${score2}`, 45, 10);
+        drawText(this.ctx, `${gameData1.score}`, 15, 10);
+        drawText(this.ctx, `${gameData2.score}`, 45, 10);
         this.ctx.fillRect(42, 7, 1, 21);
         this.ctx.fillRect(14, 7, 56, 1);
     }
