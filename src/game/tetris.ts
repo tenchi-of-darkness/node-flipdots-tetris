@@ -118,8 +118,8 @@ function getTicksPerDrop(level: number, dropType: keyof typeof ticksPerDropBase)
     return Math.max(1, base - Math.floor(speedIncrease / 2));
 }
 const ticksPerDropBase = {
-    normal: 5,
-    soft: 1,
+    normal: 20,
+    soft: 3,
     hard: 0,
 };
 
