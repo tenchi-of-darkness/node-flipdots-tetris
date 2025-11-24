@@ -1,10 +1,10 @@
 // src/display/renderer.ts
-import {Canvas, CanvasRenderingContext2D, createCanvas} from "canvas";
-import {Display} from "@owowagency/flipdot-emu";
+import { Canvas, CanvasRenderingContext2D, createCanvas } from "canvas";
+import { Display } from "@owowagency/flipdot-emu";
 import fs from "node:fs";
 import path from "node:path";
-import {GameData} from "../game/index.js";
-import {LAYOUT} from "../config/index.js";
+import { GameData } from "../game/index.js";
+import { LAYOUT } from "../config/index.js";
 import { FONT_5x5 } from "./font5x5.js";
 
 function drawChar(ctx: CanvasRenderingContext2D, ch: string, x: number, y: number) {
@@ -71,7 +71,7 @@ export class Renderer {
      */
     private initialize() {
         if (!fs.existsSync(this.outputDir)) {
-            fs.mkdirSync(this.outputDir, {recursive: true});
+            fs.mkdirSync(this.outputDir, { recursive: true });
         }
 
 
@@ -99,10 +99,10 @@ export class Renderer {
         }
 
         // Draw each active game board.
-        gameData.forEach((data, index) => {
-            const boardX = 1 + index * 70;
-            this.drawBoard(data, boardX);
-        });
+        for (let i = 0; i < gameData.length; i++) {
+            const boardX = 1 + i * 70;
+            this.drawBoard(gameData, boardX, i);
+        }
 
         // Draw the score display.
         this.drawScores(gameData);
@@ -114,8 +114,8 @@ export class Renderer {
         this.ctx.textAlign = 'center';
         const cx = 12;
         const cy = 7;
-        drawText(this.ctx, 'PRESS ', cx+15, cy);
-        drawText(this.ctx,'ANY BUTTON', cx, cy+7);
+        drawText(this.ctx, 'PRESS ', cx + 15, cy);
+        drawText(this.ctx, 'ANY BUTTON', cx, cy + 7);
     }
 
     private clearCanvas() {
@@ -129,17 +129,38 @@ export class Renderer {
         this.ctx.strokeStyle = "#fff";
     }
 
-    private drawBoard(gameData: GameData, boardX: number) {
-        if (gameData.gameOver) {
-            drawText(this.ctx, 'GAME', boardX + 2, 7);
-            drawText(this.ctx, 'OVER', boardX + 2, 17);
-            return;
+    private drawBoard(gameData: GameData[], boardX: number, i: number) {
+        if (gameData.length > 1) {
+            if (gameData[0].gameOver && gameData[1].gameOver) {
+                if (i === 0) {
+                    drawText(this.ctx, 'GAME', 30, 12);
+                    drawText(this.ctx, 'OVER', 30, 20);
+                }
+                return;
+            }
         }
+
+            if (gameData[i].gameOver) {
+                if (gameData.length === 1) {
+                    drawText(this.ctx, 'GAME', 3, 8);
+                    drawText(this.ctx, 'OVER', 3, 16);
+                    return;
+                }
+                const textX = i === 0 ? 10 : 51;
+                const playerLabelX = i === 0 ? 16 : 57;
+                const player = i === 0 ? 'P1' : 'P2';
+                drawText(this.ctx, player, playerLabelX, 1);
+                drawText(this.ctx, 'GAME', textX, 8);
+                drawText(this.ctx, 'OVER', textX, 15);
+                return;
+            }
+
         this.drawBoardOutline(this.ctx, boardX);
-        const {x, y, rotation, piece} = gameData.currentPiece;
+        const { x, y, rotation, piece } = gameData[i].currentPiece;
         this.drawMovingPiece(this.ctx, boardX, x, y, piece[rotation]);
-        this.drawPlacedBlocks(this.ctx, boardX, gameData.blockGrid);
+        this.drawPlacedBlocks(this.ctx, boardX, gameData[i].blockGrid);
     }
+
 
     private drawBoardOutline(ctx: CanvasRenderingContext2D, x: number) {
         ctx.fillRect(x, 0, 12, 28);
@@ -170,21 +191,85 @@ export class Renderer {
     }
 
     private drawSinglePlayerScore(gameData: GameData) {
-        const scoreX = 45;
-        const textY = 5;
-
-        drawText(this.ctx, "SCORE", scoreX - 15, textY);
-        drawText(this.ctx, `${gameData.score}`, scoreX - 15, textY + 8);
+        drawText(this.ctx, "SCORE", 30, 8);
+        drawText(this.ctx, `${gameData.score}`, 30, 16);
     }
 
     private drawTwoPlayerScore(gameData1: GameData, gameData2: GameData) {
-        const scoreX = 26;
-        this.ctx.textAlign = 'left';
-        drawText(this.ctx, "SCORE", scoreX+1, 1);
-        drawText(this.ctx, `${gameData1.score}`, scoreX - 12, 9);
-        drawText(this.ctx, `${gameData2.score}`, scoreX + 17, 9);
-        this.ctx.fillRect(scoreX + 15, 7, 1, 21);
-        this.ctx.fillRect(scoreX - 12, 7, 56, 1);
+        let score1 = 0;
+        let score2 = 0;
+        if (gameData1.gameOver && gameData2.gameOver) {
+            // let score1X = 10;
+            // if (gameData1.score >= 10) score1X = 7;
+            // if (gameData1.score >= 100) score1X = 5
+            // if (gameData1.score >= 1000) score1X = 1;
+
+            // let score2X = 69;
+            // if (gameData2.score >= 10) score2X = 66;
+            // if (gameData2.score >= 100) score2X = 64;
+            // if (gameData2.score >= 1000) score2X = 60;
+
+            let score1X = 10;
+            if (score1 >= 10) score1X = 7;
+            if (score1 >= 100) score1X = 5
+            if (score1 >= 1000) score1X = 1;
+
+            let score2X = 69;
+            if (score2 >= 10) score2X = 66;
+            if (score2 >= 100) score2X = 64;
+            if (score2 >= 1000) score2X = 60;
+
+            if (gameData1.score > gameData2.score) {
+                drawText(this.ctx, "P1 WINS", 21, 1);
+            } else if (gameData2.score > gameData1.score) {
+                drawText(this.ctx, "P2 WINS", 21, 1);
+            } else {
+                drawText(this.ctx, "DRAW", 30, 2);
+            }
+            drawText(this.ctx, 'P1', 7, 12);
+            drawText(this.ctx, `${score1}`, score1X, 20);
+            drawText(this.ctx, 'P2', 66, 12);
+            drawText(this.ctx, `${score2}`, score2X, 20);
+
+            return;
+        } else if (gameData1.gameOver) {
+
+            // let score1X = 19;
+            // if (gameData1.score >= 10) score1X = 16;
+            // if (gameData1.score >= 100) score1X = 14
+            // if (gameData1.score >= 1000) score1X = 10;
+
+            let score1X = 19;
+            if (score1 >= 10) score1X = 16;
+            if (score1 >= 100) score1X = 13
+            if (score1 >= 1000) score1X = 10;
+
+
+            this.ctx.fillRect(43, 0, 1, 28);
+            this.ctx.fillRect(43, 7, 28, 1);
+            drawText(this.ctx, 'P2', 52, 1);
+            drawText(this.ctx, `${score1}`, score1X, 22);
+            drawText(this.ctx, `${score2}`, 46, 10);
+            return;
+        } else if (gameData2.gameOver) {
+            let score2X = 60;
+            if (score2 >= 10) score2X = 57;
+            if (score2 >= 100) score2X = 54;
+            if (score2 >= 1000) score2X = 51;
+
+            this.ctx.fillRect(40, 0, 1, 28);
+            this.ctx.fillRect(13, 7, 28, 1);
+            drawText(this.ctx, 'P1', 21, 1);
+            drawText(this.ctx, `${score1}`, 15, 10);
+            drawText(this.ctx, `${score2}`, score2X, 22);
+            return;
+        }
+
+        drawText(this.ctx, "SCORE", 27, 1);
+        drawText(this.ctx, `${score1}`, 15, 10);
+        drawText(this.ctx, `${score2}`, 45, 10);
+        this.ctx.fillRect(42, 7, 1, 21);
+        this.ctx.fillRect(14, 7, 56, 1);
     }
 
     /**
