@@ -15,7 +15,7 @@ export function getControllerIndexFromXbox(xboxString: string) {
 
 export default class GamepadService {
     private eventEmitter: EventEmitter;
-    public readonly SIGNAL_POLL_INTERVAL_MS: number = 50;
+    public readonly SIGNAL_POLL_INTERVAL_MS: number = 16;
     public readonly THUMBSTICK_NOISE_THRESHOLD: number = 0.15;
 
     constructor() {
@@ -77,8 +77,14 @@ export default class GamepadService {
                 }
             }
 
-            window.addEventListener("gamepadconnected", handleGamepadConnected);
-            window.addEventListener("gamepaddisconnected", handleGamepadDisconnected);
+            window.addEventListener("gamepadconnected", (e) => {
+                if(e.gamepad.id.startsWith('PS5')) return;
+                handleGamepadConnected(e)
+            });
+            window.addEventListener("gamepaddisconnected", (e) => {
+                if(e.gamepad.id.startsWith('PS5')) return;
+                handleGamepadDisconnected(e)
+            });
 
         }, {buttons, pollInterval: this.SIGNAL_POLL_INTERVAL_MS, noiseThreshold: this.THUMBSTICK_NOISE_THRESHOLD});
     }
