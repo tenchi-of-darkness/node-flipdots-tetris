@@ -181,8 +181,8 @@ export class Renderer {
         drawText(this.ctx, pauseText, startX, baseY);
 
         //menu options
-        const restartPrefix = gameData.pauseSelection === 'restart' ? '>' : ' ';
-        const quitPrefix = gameData.pauseSelection === 'quit' ? '>' : ' ';
+        const restartPrefix = gameData.pauseSelection === 'restart' ? '-' : ' ';
+        const quitPrefix = gameData.pauseSelection === 'quit' ? '-' : ' ';
 
         drawText(this.ctx, `${restartPrefix}${restartText}`, startX, baseY + 8);
         drawText(this.ctx, `${quitPrefix}${quitText}`, startX, baseY + 16);
@@ -207,14 +207,14 @@ export class Renderer {
         const quitText = "QUIT";
 
         const centerWidth = this.display.width;
-        const pauseWidth = pauseText.length * 6 - 1;
+        const pauseWidth = pauseText.length * 8 - 1;
         const startX = Math.floor((centerWidth - pauseWidth) / 2);
 
         //choose selection from player 1 if available, else from player 2
         const selection = gameData1.pauseSelection ?? gameData2.pauseSelection ?? 'restart';
 
-        const restartPrefix = selection === 'restart' ? '>' : ' ';
-        const quitPrefix = selection === 'quit' ? '>' : ' ';
+        const restartPrefix = selection === 'restart' ? '-' : ' ';
+        const quitPrefix = selection === 'quit' ? '-' : ' ';
         const baseY = 0;
 
         drawText(this.ctx, pauseText, startX, baseY + 1);
