@@ -159,6 +159,20 @@ export class Renderer {
         const { x, y, rotation, piece } = gameData[i].currentPiece;
         this.drawMovingPiece(this.ctx, boardX, x, y, piece[rotation]);
         this.drawPlacedBlocks(this.ctx, boardX, gameData[i].blockGrid);
+
+        if (gameData.length === 1) {
+            this.ctx.fillRect(boardX + 20, 0, 1, 8);
+            this.ctx.fillRect(boardX + 12, 8, 9, 1);
+            this.drawNextPiece(this.ctx, gameData[i].nextPiece, boardX + 15, 3); 
+        } else if (gameData.length === 2) {
+            if (i === 0) {
+                // this.ctx.fillRect(boardX + 20, 0, 1, 8);
+                this.drawNextPiece(this.ctx, gameData[i].nextPiece, boardX + 15, 2);
+            } else {
+                // this.ctx.fillRect(boardX - 1, 0, 1, 8);
+                this.drawNextPiece(this.ctx, gameData[i].nextPiece, boardX - 6, 2);
+            }
+        }
     }
 
 
@@ -175,6 +189,15 @@ export class Renderer {
             ctx.fillRect(boardX + x + 1 + piece.x, y + piece.y, 1, 1);
         });
     }
+
+    private drawNextPiece(ctx: CanvasRenderingContext2D, nextPiece: { rotation: number, piece: any[][] }, x: number, y: number) {
+    const shape = nextPiece.piece[nextPiece.rotation];
+
+    shape.forEach(part => {
+        ctx.fillRect(x + part.x, y + part.y, 1, 1);
+    });
+}
+
 
     private drawPlacedBlocks(ctx: CanvasRenderingContext2D, boardX: number, blockGrid: any[]) {
         blockGrid.forEach((block) => {
