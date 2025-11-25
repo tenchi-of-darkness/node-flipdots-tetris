@@ -50,7 +50,6 @@ export class TetrisGameAdapter {
     };
 
     executeTick(controllerState: GamepadState): GameData {
-
         const {moveHorizontal, moveRotation, dropHard, dropSoft, restartPressed} = this.handleInput(controllerState);
 
         if (this.game.gameOver && restartPressed) {
@@ -64,27 +63,11 @@ export class TetrisGameAdapter {
                 rotateCCW: false,
                 restart: false,
             };
-            return this.executeTick(controllerState);
         }
 
-        if (this.game.gameOver) {
-            return {
-                currentPiece: {
-                    x: this.game.currentPiece.x,
-                    y: this.game.currentPiece.y,
-                    rotation: this.game.currentPiece.rotation,
-                    piece: Pieces[this.game.currentPiece.type]
-                },
-                nextPiece: {rotation: this.game.nextPiece.rotation, piece: Pieces[this.game.nextPiece.type]},
-                blockGrid: this.game.placedBlocks,
-                score: this.game.score,
-                level: this.game.level,
-                lines: this.game.lines,
-                gameOver: this.game.gameOver,
-            };
+        if (!this.game.gameOver) {
+            this.game.executeTick(moveHorizontal, moveRotation, dropSoft, dropHard);
         }
-
-        this.game.executeTick(moveHorizontal, moveRotation, dropSoft, dropHard);
 
         return {
             currentPiece: {
@@ -114,8 +97,6 @@ export class TetrisGameAdapter {
             return currentButtonStates[action] && !this.lastButtonStates[action];
         };
 
-        const restartPressed = wasJustPressed('restart');
-
         let moveHorizontal = 0;
         if (wasJustPressed('right')) {
             moveHorizontal = 1;
@@ -139,18 +120,19 @@ export class TetrisGameAdapter {
 
         this.lastButtonStates = currentButtonStates;
 
-        return {moveHorizontal, moveRotation, dropHard, dropSoft, restartPressed};
+        return {moveHorizontal, moveRotation, dropHard, dropSoft, restartPressed: wasJustPressed('restart')};
     }
 }
 
 function getTicksPerDrop(level: number, dropType: keyof typeof ticksPerDropBase): number {
     const base = ticksPerDropBase[dropType];
-    if (base === 0){
+    if (base === 0) {
         return 0;
     }
     const speedIncrease = Math.min(level - 1, 20);
     return Math.max(1, base - Math.floor(speedIncrease / 2));
 }
+
 const ticksPerDropBase = {
     normal: 20,
     soft: 3,
@@ -177,12 +159,29 @@ export class TetrisGame {
         this._nextPiece = this.createNewPiece();
     }
 
-    get placedBlocks() { return this._placedBlocks; }
-    get currentPiece() { return this._currentPiece; }
-    get nextPiece() { return this._nextPiece; }
-    get score() { return this._score; }
-    get level() { return this._level; }
-    get lines() { return this._lines; }
+    get placedBlocks() {
+        return this._placedBlocks;
+    }
+
+    get currentPiece() {
+        return this._currentPiece;
+    }
+
+    get nextPiece() {
+        return this._nextPiece;
+    }
+
+    get score() {
+        return this._score;
+    }
+
+    get level() {
+        return this._level;
+    }
+
+    get lines() {
+        return this._lines;
+    }
 
     executeTick(moveX: number, rotateMove: number, dropSoft: boolean, dropHard: boolean) {
         this.ticks++;
@@ -195,9 +194,9 @@ export class TetrisGame {
 
         const actualTicksPerDrop = getTicksPerDrop(this._level, dropType);
 
-        if (actualTicksPerDrop === 0){
-            while (true){
-                if (!this.drop()){
+        if (actualTicksPerDrop === 0) {
+            while (true) {
+                if (!this.drop()) {
                     return;
                 }
             }
