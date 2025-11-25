@@ -14,13 +14,16 @@ const inputManager = new InputManager();
 const games: { [index: number]: TetrisGameAdapter } = {};
 
 await initializeInput(inputManager, games);
-
+let counter = 0;
 // Start the main game loop.
 ticker.start(async ({deltaTime, elapsedTime}: { deltaTime: number, elapsedTime: number }) => {
-    console.clear();
-    console.time("Write frame");
-    console.log(`Rendering a ${renderer.getWidth()}x${renderer.getHeight()} canvas`);
-    console.log("View at http://localhost:3000/view");
+    counter++;
+    if(counter > 3){
+        console.clear();
+        console.time("Write frame");
+        console.log(`Rendering a ${renderer.getWidth()}x${renderer.getHeight()} canvas`);
+        console.log("View at http://localhost:3000/view");
+    }
 
     inputManager.update();
 
@@ -56,9 +59,12 @@ ticker.start(async ({deltaTime, elapsedTime}: { deltaTime: number, elapsedTime: 
         return games[index].executeTick(inputManager.getControllerState(index));
     });
 
-    renderer.render(gameData);
+    if(counter > 3){
+        counter = 0;
+        renderer.render(gameData);
+        console.log(`Elapsed time: ${(elapsedTime / 1000).toFixed(2)}s`);
+        console.log(`Delta time: ${deltaTime.toFixed(2)}ms`);
+        console.timeEnd("Write frame");
+    }
 
-    console.log(`Elapsed time: ${(elapsedTime / 1000).toFixed(2)}s`);
-    console.log(`Delta time: ${deltaTime.toFixed(2)}ms`);
-    console.timeEnd("Write frame");
 });

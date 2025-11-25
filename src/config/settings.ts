@@ -1,4 +1,4 @@
-export const FPS = 15;
+export const FPS = 60;
 
 export const LAYOUT = [
   [3, 2, 1],
