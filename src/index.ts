@@ -26,7 +26,33 @@ ticker.start(async ({deltaTime, elapsedTime}: { deltaTime: number, elapsedTime: 
 
     const activeControllers = Object.keys(games).map(Number);
 
-    const gameData = activeControllers.map(index => {
+    // const gameData = activeControllers.map(index => {
+    //     return games[index].executeTick(inputManager.getControllerState(index));
+    // });
+
+    let gameData = activeControllers.map(index => {
+        return games[index].executeTick(inputManager.getControllerState(index));
+    });
+
+    //handle pause menu actions
+    activeControllers.forEach((controllerIndex, i) => {
+        const data = gameData[i];
+    if (!data) return;
+
+    if (data.menuAction === 'restart') {
+        //Restart the game
+        games[controllerIndex] = new TetrisGameAdapter();
+    } 
+
+    if (data.menuAction === 'quit') {
+        //Quit the game by removing it from active games
+        delete games[controllerIndex];
+    }
+});
+
+    //re-filter active controllers + gameData, in case someone quit
+    const activeAfterActions = Object.keys(games).map(Number);
+    gameData = activeAfterActions.map(index => {
         return games[index].executeTick(inputManager.getControllerState(index));
     });
 

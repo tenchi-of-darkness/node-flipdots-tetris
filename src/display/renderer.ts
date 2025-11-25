@@ -166,41 +166,72 @@ export class Renderer {
 
     private drawSinglePlayerScore(gameData: GameData) {
         //singele player pause
-        if (gameData.paused) {
-            const pauseText = "PAUSED";
-            const textWidth = pauseText.length * 6 - 1;
-            const startX = Math.floor((this.display.width - textWidth) / 2);
-            const startY = Math.floor(this.display.height / 2) - 6;
+    if (gameData.paused) {
+        const cx = Math.floor(this.display.width / 2);
 
-            drawText(this.ctx, pauseText, startX, startY);
-            return;
-        }
-        const scoreX = 45;
-        const textY = 5;
+        const pauseText = "PAUSED";
+        const restartText = "RESTART";
+        const quitText = "QUIT";
 
-        drawText(this.ctx, "SCORE", scoreX - 15, textY);
-        drawText(this.ctx, `${gameData.score}`, scoreX - 15, textY + 8);
+        const baseY = 3;
+        const pauseWidth = pauseText.length * 6 - 1;
+        const startX = Math.floor((this.display.width - pauseWidth) / 2);
+
+        //PAUSED
+        drawText(this.ctx, pauseText, startX, baseY);
+
+        //menu options
+        const restartPrefix = gameData.pauseSelection === 'restart' ? '>' : ' ';
+        const quitPrefix = gameData.pauseSelection === 'quit' ? '>' : ' ';
+
+        drawText(this.ctx, `${restartPrefix}${restartText}`, startX, baseY + 8);
+        drawText(this.ctx, `${quitPrefix}${quitText}`, startX, baseY + 16);
+
+        return;
     }
+
+    //single player score
+    const scoreX = 45;
+    const textY = 5;
+
+    drawText(this.ctx, "SCORE", scoreX - 15, textY);
+    drawText(this.ctx, `${gameData.score}`, scoreX - 15, textY + 8);
+}
+
 
     private drawTwoPlayerScore(gameData1: GameData, gameData2: GameData) {
         //two player pause
-        if (gameData1.paused || gameData2.paused) {
-            const pauseText = "PAUSED";
-            const textWidth = pauseText.length * 6 - 1;
-            const startX = Math.floor((this.display.width - textWidth) / 2);
-            drawText(this.ctx, pauseText, startX, 10);
-            return;
-        }
+    if (gameData1.paused || gameData2.paused) {
+        const pauseText = "PAUSED";
+        const restartText = "RESTART";
+        const quitText = "QUIT";
 
+        const centerWidth = this.display.width;
+        const pauseWidth = pauseText.length * 6 - 1;
+        const startX = Math.floor((centerWidth - pauseWidth) / 2);
 
-        const scoreX = 26;
-        this.ctx.textAlign = 'left';
-        drawText(this.ctx, "SCORE", scoreX+1, 1);
-        drawText(this.ctx, `${gameData1.score}`, scoreX - 12, 9);
-        drawText(this.ctx, `${gameData2.score}`, scoreX + 17, 9);
-        this.ctx.fillRect(scoreX + 15, 7, 1, 21);
-        this.ctx.fillRect(scoreX - 12, 7, 56, 1);
+        //choose selection from player 1 if available, else from player 2
+        const selection = gameData1.pauseSelection ?? gameData2.pauseSelection ?? 'restart';
+
+        const restartPrefix = selection === 'restart' ? '>' : ' ';
+        const quitPrefix = selection === 'quit' ? '>' : ' ';
+        const baseY = 0;
+
+        drawText(this.ctx, pauseText, startX, baseY + 1);
+        drawText(this.ctx, `${restartPrefix}${restartText}`, startX, baseY + 9);
+        drawText(this.ctx, `${quitPrefix}${quitText}`, startX, baseY + 17);
+        return;
     }
+
+    //2-player score
+    const scoreX = 26;
+    drawText(this.ctx, "SCORE", scoreX + 1, 1);
+    drawText(this.ctx, `${gameData1.score}`, scoreX - 12, 9);
+    drawText(this.ctx, `${gameData2.score}`, scoreX + 17, 9);
+    this.ctx.fillRect(scoreX + 15, 7, 1, 21);
+    this.ctx.fillRect(scoreX - 12, 7, 56, 1);
+}
+
 
     /**
      * After all drawing is done, this function processes the canvas.
