@@ -13,6 +13,7 @@ const buttonMapping = {
     softDrop: "D_PAD_DOWN",
     rotateCW: "B",
     rotateCCW: "A",
+    restart: "Y",
 };
 
 type ButtonStates = Record<keyof typeof buttonMapping, boolean>;
@@ -32,6 +33,7 @@ export interface GameData {
     score: number;
     level: number;
     lines: number;
+    gameOver?: boolean;
 }
 
 export class TetrisGameAdapter {
@@ -44,14 +46,43 @@ export class TetrisGameAdapter {
         softDrop: false,
         rotateCW: false,
         rotateCCW: false,
+        restart: false,
     };
 
     executeTick(controllerState: GamepadState): GameData {
-        if (this.game.gameOver) {
+
+        const {moveHorizontal, moveRotation, dropHard, dropSoft, restartPressed} = this.handleInput(controllerState);
+
+        if (this.game.gameOver && restartPressed) {
             this.game = new TetrisGame();
+            this.lastButtonStates = {
+                left: false,
+                right: false,
+                hardDrop: false,
+                softDrop: false,
+                rotateCW: false,
+                rotateCCW: false,
+                restart: false,
+            };
+            return this.executeTick(controllerState);
         }
 
-        const {moveHorizontal, moveRotation, dropHard, dropSoft} = this.handleInput(controllerState);
+        if (this.game.gameOver) {
+            return {
+                currentPiece: {
+                    x: this.game.currentPiece.x,
+                    y: this.game.currentPiece.y,
+                    rotation: this.game.currentPiece.rotation,
+                    piece: Pieces[this.game.currentPiece.type]
+                },
+                nextPiece: {rotation: this.game.nextPiece.rotation, piece: Pieces[this.game.nextPiece.type]},
+                blockGrid: this.game.placedBlocks,
+                score: this.game.score,
+                level: this.game.level,
+                lines: this.game.lines,
+                gameOver: this.game.gameOver,
+            };
+        }
 
         this.game.executeTick(moveHorizontal, moveRotation, dropSoft, dropHard);
 
@@ -67,6 +98,7 @@ export class TetrisGameAdapter {
             score: this.game.score,
             level: this.game.level,
             lines: this.game.lines,
+            gameOver: this.game.gameOver,
         }
     }
 
@@ -81,6 +113,8 @@ export class TetrisGameAdapter {
         const wasJustPressed = (action: keyof ButtonStates): boolean => {
             return currentButtonStates[action] && !this.lastButtonStates[action];
         };
+
+        const restartPressed = wasJustPressed('restart');
 
         let moveHorizontal = 0;
         if (wasJustPressed('right')) {
@@ -105,7 +139,7 @@ export class TetrisGameAdapter {
 
         this.lastButtonStates = currentButtonStates;
 
-        return {moveHorizontal, moveRotation, dropHard, dropSoft};
+        return {moveHorizontal, moveRotation, dropHard, dropSoft, restartPressed};
     }
 }
 
