@@ -1,9 +1,9 @@
-import {Pieces, PiecesKeyType} from "./pieces.js";
-import {getRandomPiece, getRandomRotation} from "./random.js";
-import {canMovePiece, canRotatePiece, MovablePiece, PlacedBlocks, pushPieceBlocks} from "./collision.js";
-import {getControllerIndexFromXbox, GamepadState} from "../input/index.js";
+import { Pieces, PiecesKeyType } from "./pieces.js";
+import { getRandomPiece, getRandomRotation } from "./random.js";
+import { canMovePiece, canRotatePiece, MovablePiece, PlacedBlocks, pushPieceBlocks } from "./collision.js";
+import { getControllerIndexFromXbox, GamepadState } from "../input/index.js";
 
-const PieceStartingLocation = {x: 4, y: 0}
+const PieceStartingLocation = { x: 4, y: 0 }
 const BOARD_WIDTH = 10;
 
 const buttonMapping = {
@@ -50,7 +50,7 @@ export class TetrisGameAdapter {
     };
 
     executeTick(controllerState: GamepadState): GameData {
-        const {moveHorizontal, moveRotation, dropHard, dropSoft, restartPressed} = this.handleInput(controllerState);
+        const { moveHorizontal, moveRotation, dropHard, dropSoft, restartPressed } = this.handleInput(controllerState);
 
         if (this.game.gameOver && restartPressed) {
             this.game = new TetrisGame();
@@ -63,11 +63,27 @@ export class TetrisGameAdapter {
                 rotateCCW: false,
                 restart: false,
             };
+            return this.executeTick(controllerState);
         }
 
-        if (!this.game.gameOver) {
-            this.game.executeTick(moveHorizontal, moveRotation, dropSoft, dropHard);
+        if (this.game.gameOver) {
+            return {
+                currentPiece: {
+                    x: this.game.currentPiece.x,
+                    y: this.game.currentPiece.y,
+                    rotation: this.game.currentPiece.rotation,
+                    piece: Pieces[this.game.currentPiece.type]
+                },
+                nextPiece: { rotation: this.game.nextPiece.rotation, piece: Pieces[this.game.nextPiece.type] },
+                blockGrid: this.game.placedBlocks,
+                score: this.game.score,
+                level: this.game.level,
+                lines: this.game.lines,
+                gameOver: this.game.gameOver,
+            }
         }
+
+        this.game.executeTick(moveHorizontal, moveRotation, dropSoft, dropHard);
 
         return {
             currentPiece: {
@@ -76,7 +92,7 @@ export class TetrisGameAdapter {
                 rotation: this.game.currentPiece.rotation,
                 piece: Pieces[this.game.currentPiece.type]
             },
-            nextPiece: {rotation: this.game.nextPiece.rotation, piece: Pieces[this.game.nextPiece.type]},
+            nextPiece: { rotation: this.game.nextPiece.rotation, piece: Pieces[this.game.nextPiece.type] },
             blockGrid: this.game.placedBlocks,
             score: this.game.score,
             level: this.game.level,
@@ -96,6 +112,8 @@ export class TetrisGameAdapter {
         const wasJustPressed = (action: keyof ButtonStates): boolean => {
             return currentButtonStates[action] && !this.lastButtonStates[action];
         };
+
+        const restartPressed = wasJustPressed('restart');
 
         let moveHorizontal = 0;
         if (wasJustPressed('right')) {
@@ -120,7 +138,7 @@ export class TetrisGameAdapter {
 
         this.lastButtonStates = currentButtonStates;
 
-        return {moveHorizontal, moveRotation, dropHard, dropSoft, restartPressed: wasJustPressed('restart')};
+        return { moveHorizontal, moveRotation, dropHard, dropSoft, restartPressed };
     }
 }
 
@@ -241,7 +259,7 @@ export class TetrisGame {
     private clearLines() {
         const boardHeight = 27;
 
-        const fullLines = Array.from({length: boardHeight}, (_, i) => i)
+        const fullLines = Array.from({ length: boardHeight }, (_, i) => i)
             .filter(y => this._placedBlocks.filter(b => b.y === y).length === BOARD_WIDTH);
 
         if (fullLines.length > 0) {
@@ -253,7 +271,7 @@ export class TetrisGame {
                 .filter(block => !fullLines.includes(block.y))
                 .forEach(block => {
                     const linesClearedBelow = fullLines.filter(y => y > block.y).length;
-                    newPlacedBlocks.push({x: block.x, y: block.y + linesClearedBelow});
+                    newPlacedBlocks.push({ x: block.x, y: block.y + linesClearedBelow });
                 });
             this._placedBlocks = newPlacedBlocks;
         }
