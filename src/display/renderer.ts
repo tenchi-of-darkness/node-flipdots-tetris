@@ -1,28 +1,12 @@
 // src/display/renderer.ts
-import { Canvas, CanvasRenderingContext2D, createCanvas } from "canvas";
+import { Canvas, CanvasRenderingContext2D as NodeCanvasContext, createCanvas } from "canvas";
 import { Display } from "@owowagency/flipdot-emu";
 import fs from "node:fs";
 import path from "node:path";
 import { GameData } from "../game/index.js";
 import { LAYOUT } from "../config/index.js";
-import { FONT_5x5 } from "./font5x5.js";
-
-function drawChar(ctx: CanvasRenderingContext2D, ch: string, x: number, y: number) {
-    const bitmap = FONT_5x5[ch] || FONT_5x5[' '];
-    bitmap.forEach((row, ry) => {
-        for (let cx = 0; cx < 5; cx++) {
-            if (row & (1 << (4 - cx))) {
-                ctx.fillRect(x + cx, y + ry, 1, 1);
-            }
-        }
-    });
-}
-
-function drawText(ctx: CanvasRenderingContext2D, text: string, x: number, y: number, spacing = 1) {
-    for (let i = 0; i < text.length; i++) {
-        drawChar(ctx, text[i], x + i * (5 + spacing), y);
-    }
-}
+import { drawText } from "./utils.js";
+import { StartScreenAnimator } from "./owow-animation.js";
 
 /**
  * The Renderer class is responsible for all drawing operations. It takes game state data
@@ -33,15 +17,17 @@ function drawText(ctx: CanvasRenderingContext2D, text: string, x: number, y: num
 export class Renderer {
     private readonly display: Display;
     private readonly canvas: Canvas;
-    private readonly ctx: CanvasRenderingContext2D;
+    private readonly ctx: NodeCanvasContext;
     private readonly isDev: boolean;
     private readonly outputDir = "./output";
+    private readonly startScreenAnimator: StartScreenAnimator;
 
     constructor(isDev: boolean) {
         this.isDev = isDev;
         this.display = this.createDisplay();
         this.canvas = createCanvas(this.display.width, this.display.height);
         this.ctx = this.canvas.getContext("2d");
+        this.startScreenAnimator = new StartScreenAnimator();
         this.initialize();
     }
 
@@ -93,7 +79,7 @@ export class Renderer {
 
         // logic: if no TetrisGameAdapter exists for any controller, gameData is empty.
         if (!gameData || gameData.length === 0) {
-            this.drawStartScreen();
+            this.startScreenAnimator.update(this.ctx);
             this.finalizeFrame();
             return;
         }
@@ -176,12 +162,12 @@ export class Renderer {
     }
 
 
-    private drawBoardOutline(ctx: CanvasRenderingContext2D, x: number) {
+    private drawBoardOutline(ctx: NodeCanvasContext, x: number) {
         ctx.fillRect(x, 0, 12, 28);
         ctx.clearRect(x + 1, 0, 10, 27);
     }
 
-    private drawMovingPiece(ctx: CanvasRenderingContext2D, boardX: number, x: number, y: number, pieceParts: {
+    private drawMovingPiece(ctx: NodeCanvasContext, boardX: number, x: number, y: number, pieceParts: {
         x: number,
         y: number
     }[]) {
@@ -190,7 +176,7 @@ export class Renderer {
         });
     }
 
-    private drawNextPiece(ctx: CanvasRenderingContext2D, nextPiece: { rotation: number, piece: any[][] }, x: number, y: number) {
+    private drawNextPiece(ctx: NodeCanvasContext, nextPiece: { rotation: number, piece: any[][] }, x: number, y: number) {
     const shape = nextPiece.piece[nextPiece.rotation];
 
     shape.forEach(part => {
@@ -199,7 +185,7 @@ export class Renderer {
 }
 
 
-    private drawPlacedBlocks(ctx: CanvasRenderingContext2D, boardX: number, blockGrid: any[]) {
+    private drawPlacedBlocks(ctx: NodeCanvasContext, boardX: number, blockGrid: any[]) {
         blockGrid.forEach((block) => {
             ctx.fillRect(boardX + 1 + block.x, block.y, 1, 1);
         });
