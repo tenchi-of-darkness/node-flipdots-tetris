@@ -24,6 +24,10 @@ function drawText(ctx: CanvasRenderingContext2D, text: string, x: number, y: num
     }
 }
 
+function textWidth(text: string): number {
+    return text.length * 6 - 1; 
+}
+
 /**
  * The Renderer class is responsible for all drawing operations. It takes game state data
  * and renders it to an in-memory canvas. Depending on the mode (dev or prod),
@@ -104,10 +108,36 @@ export class Renderer {
             this.drawBoard(gameData, boardX, i);
         }
 
+        // pause overlay has priority over score display
+        if (this.drawPauseIfNeeded(gameData)) {
+            this.finalizeFrame();
+            return;
+        }
+
         // Draw the score display.
         this.drawScores(gameData);
 
         this.finalizeFrame();
+    }
+
+    private drawPauseIfNeeded(gameData: GameData[]): boolean {
+
+        if (gameData.length === 1) {
+            const g = gameData[0];
+            if (g.paused && !g.gameOver) {
+                this.drawSinglePauseMenu(g);
+                return true;
+            }
+        } else if (gameData.length === 2) {
+            const g1 = gameData[0];
+            const g2 = gameData[1];
+            const anyPaused = (g1.paused && !g1.gameOver) || (g2.paused && !g2.gameOver);
+            if (anyPaused) {
+                this.drawTwoPlayerPauseMenu(g1, g2);
+                return true;
+            }
+        }
+        return false;
     }
 
     private drawStartScreen(): void {
@@ -204,6 +234,50 @@ export class Renderer {
             ctx.fillRect(boardX + 1 + block.x, block.y, 1, 1);
         });
     }
+
+/// Pause menu drawing
+    private drawSinglePauseMenu(gameData: GameData) {
+    const pauseText = "PAUSED";
+    const restartText = "RESTART";
+    const quitText = "QUIT";
+
+    const lines = [
+        pauseText,
+        `${gameData.pauseSelection === "restart" ? "-" : " "}${restartText}`,
+        `${gameData.pauseSelection === "quit" ? "-" : " "}${quitText}`,
+    ];
+
+    const maxWidth = Math.max(...lines.map(textWidth));
+    const startX = Math.floor((this.display.width - maxWidth) / 1.2);
+    const baseY = Math.floor(this.display.height / 2) - 10;
+
+    drawText(this.ctx, lines[0], startX, baseY);
+    drawText(this.ctx, lines[1], startX, baseY + 8);
+    drawText(this.ctx, lines[2], startX, baseY + 16);
+}
+
+private drawTwoPlayerPauseMenu(g1: GameData, g2: GameData) {
+    const pauseText = "PAUSED";
+    const restartText = "RESTART";
+    const quitText = "QUIT";
+
+    const sel = g1.pauseSelection ?? g2.pauseSelection ?? "restart";
+
+    const lines = [
+        pauseText,
+        `${sel === "restart" ? "-" : " "}${restartText}`,
+        `${sel === "quit" ? "-" : " "}${quitText}`,
+    ];
+
+    const maxWidth = Math.max(...lines.map(textWidth));
+    const startX = Math.floor((this.display.width - maxWidth) / 2);
+    const baseY = 2; 
+
+    drawText(this.ctx, lines[0], startX, baseY);
+    drawText(this.ctx, lines[1], startX, baseY + 8);
+    drawText(this.ctx, lines[2], startX, baseY + 16);
+}
+
 
     private drawScores(gameData: GameData[]) {
         if (gameData.length === 2) {
