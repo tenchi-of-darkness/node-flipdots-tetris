@@ -79,7 +79,9 @@ export class TetrisGameAdapter {
         }
 
         if (this.game.gameOver && restartPressed) {
-            this.game = new TetrisGame();
+            // this.game = new TetrisGame();
+            globalRestartRequestId++;
+            
             this.lastButtonStates = {
                 left: false,
                 right: false,
