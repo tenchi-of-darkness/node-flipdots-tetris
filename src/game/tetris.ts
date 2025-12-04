@@ -39,51 +39,16 @@ export interface GameData {
 export class TetrisGameAdapter {
     private game: TetrisGame = new TetrisGame();
 
-    private lastButtonStates: ButtonStates = {
-        left: false,
-        right: false,
-        hardDrop: false,
-        softDrop: false,
-        rotateCW: false,
-        rotateCCW: false,
-        restart: false,
-    };
-
     executeTick(controllerState: GamepadState): GameData {
         const { moveHorizontal, moveRotation, dropHard, dropSoft, restartPressed } = this.handleInput(controllerState);
 
         if (this.game.gameOver && restartPressed) {
             this.game = new TetrisGame();
-            this.lastButtonStates = {
-                left: false,
-                right: false,
-                hardDrop: false,
-                softDrop: false,
-                rotateCW: false,
-                rotateCCW: false,
-                restart: false,
-            };
-            return this.executeTick(controllerState);
         }
 
-        if (this.game.gameOver) {
-            return {
-                currentPiece: {
-                    x: this.game.currentPiece.x,
-                    y: this.game.currentPiece.y,
-                    rotation: this.game.currentPiece.rotation,
-                    piece: Pieces[this.game.currentPiece.type]
-                },
-                nextPiece: { rotation: this.game.nextPiece.rotation, piece: Pieces[this.game.nextPiece.type] },
-                blockGrid: this.game.placedBlocks,
-                score: this.game.score,
-                level: this.game.level,
-                lines: this.game.lines,
-                gameOver: this.game.gameOver,
-            }
+        if (!this.game.gameOver) {
+            this.game.executeTick(moveHorizontal, moveRotation, dropSoft, dropHard);
         }
-
-        this.game.executeTick(moveHorizontal, moveRotation, dropSoft, dropHard);
 
         return {
             currentPiece: {
@@ -102,15 +67,22 @@ export class TetrisGameAdapter {
     }
 
     private handleInput(controllerState: GamepadState) {
-        const currentButtonStates = Object.fromEntries(
+        const currentButtonPresses = Object.fromEntries(
             Object.entries(buttonMapping).map(([action, buttonName]) => [
                 action,
                 controllerState.buttonsPressed.includes(getControllerIndexFromXbox(buttonName))
             ])
         ) as ButtonStates;
 
+        const currentButtonClicks = Object.fromEntries(
+            Object.entries(buttonMapping).map(([action, buttonName]) => [
+                action,
+                controllerState.buttonsClicked.includes(getControllerIndexFromXbox(buttonName))
+            ])
+        ) as ButtonStates;
+
         const wasJustPressed = (action: keyof ButtonStates): boolean => {
-            return currentButtonStates[action] && !this.lastButtonStates[action];
+            return currentButtonClicks[action];
         };
 
         const restartPressed = wasJustPressed('restart');
@@ -134,9 +106,7 @@ export class TetrisGameAdapter {
             dropHard = true;
         }
 
-        const dropSoft = currentButtonStates.softDrop;
-
-        this.lastButtonStates = currentButtonStates;
+        const dropSoft = currentButtonPresses.softDrop;
 
         return { moveHorizontal, moveRotation, dropHard, dropSoft, restartPressed };
     }
