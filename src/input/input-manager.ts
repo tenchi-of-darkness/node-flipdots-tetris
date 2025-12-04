@@ -30,7 +30,7 @@ export class InputManager {
         });
 
         this.gamepadService.on('button', (btn) => {
-            const button: { name: string, index: number, gamepad: number } = JSON.parse(btn);
+            const button: { name: string, index: number, gamepad: number, clicked: boolean } = JSON.parse(btn);
 
             while (this.liveGamepadStates.length <= button.gamepad) {
                 this.liveGamepadStates.push({buttonsPressed: [], buttonsClicked: []});
@@ -41,7 +41,7 @@ export class InputManager {
                 this.liveGamepadStates[button.gamepad].buttonsPressed.push(button.index);
             }
 
-            if (!this.liveGamepadStates[button.gamepad].buttonsClicked.includes(button.index)) {
+            if (button.clicked && !this.liveGamepadStates[button.gamepad].buttonsClicked.includes(button.index)) {
                 this.liveGamepadStates[button.gamepad].buttonsClicked.push(button.index);
             }
         });
