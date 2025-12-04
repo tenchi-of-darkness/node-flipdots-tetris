@@ -190,20 +190,21 @@ export class Renderer {
         this.drawMovingPiece(this.ctx, boardX, x, y, piece[rotation]);
         this.drawPlacedBlocks(this.ctx, boardX, gameData[i].blockGrid);
 
+        // Only draw next piece if the game is NOT paused
+    if (!gameData[i].paused) {
         if (gameData.length === 1) {
             this.ctx.fillRect(boardX + 20, 0, 1, 8);
             this.ctx.fillRect(boardX + 12, 8, 9, 1);
             this.drawNextPiece(this.ctx, gameData[i].nextPiece, boardX + 15, 3); 
         } else if (gameData.length === 2) {
             if (i === 0) {
-                // this.ctx.fillRect(boardX + 20, 0, 1, 8);
                 this.drawNextPiece(this.ctx, gameData[i].nextPiece, boardX + 15, 2);
             } else {
-                // this.ctx.fillRect(boardX - 1, 0, 1, 8);
                 this.drawNextPiece(this.ctx, gameData[i].nextPiece, boardX - 6, 2);
             }
         }
     }
+}
 
 
     private drawBoardOutline(ctx: CanvasRenderingContext2D, x: number) {
