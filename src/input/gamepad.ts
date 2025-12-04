@@ -13,9 +13,11 @@ export function getControllerIndexFromXbox(xboxString: string) {
     return buttons.indexOf(xboxString);
 }
 
+type GamePadButtonArray = readonly GamepadButton[];
+
 export default class GamepadService {
     private eventEmitter: EventEmitter;
-    public readonly SIGNAL_POLL_INTERVAL_MS: number = 16;
+    public readonly SIGNAL_POLL_INTERVAL_MS: number = 50;
     public readonly THUMBSTICK_NOISE_THRESHOLD: number = 0.15;
 
     constructor() {
@@ -40,6 +42,8 @@ export default class GamepadService {
 
         await page.evaluate(({buttons, pollInterval, noiseThreshold}) => {
             const intervals: Record<number, number> = {};
+
+            let lastPressedButtons: GamePadButtonArray[] = [];
 
             const handleGamepadConnected = (e: GamepadEvent) => {
                 let gp = navigator.getGamepads()[e.gamepad.index];
@@ -70,11 +74,14 @@ export default class GamepadService {
 
                 for (let i = 0; i < gp.buttons.length; i++) {
                     if (gp.buttons[i].pressed) {
+                        const clicked = !lastPressedButtons[gamepadIndex][i].pressed;
                         const buttonName = buttons[i] || `Button ${i}`;
-                        window.sendEventToProcessHandle(buttonName, { pressed: true, gamepad: gp.index });
-                        window.sendEventToProcessHandle('button', { name: buttonName, index: i, gamepad: gp.index });
+                        window.sendEventToProcessHandle(buttonName, { pressed: true, clicked: clicked, gamepad: gp.index });
+                        window.sendEventToProcessHandle('button', { name: buttonName, index: i, clicked: clicked, gamepad: gp.index });
                     }
                 }
+
+                lastPressedButtons[gamepadIndex]=gp.buttons;
             }
 
             window.addEventListener("gamepadconnected", (e) => {
