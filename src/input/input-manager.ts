@@ -3,6 +3,7 @@ import {EventEmitter} from "events";
 
 export interface GamepadState {
     buttonsPressed: number[];
+    buttonsClicked: number[];
 }
 
 export class InputManager {
@@ -32,12 +33,16 @@ export class InputManager {
             const button: { name: string, index: number, gamepad: number } = JSON.parse(btn);
 
             while (this.liveGamepadStates.length <= button.gamepad) {
-                this.liveGamepadStates.push({ buttonsPressed: [] });
-                this.oldGamepadStates.push({ buttonsPressed: [] });
+                this.liveGamepadStates.push({buttonsPressed: [], buttonsClicked: []});
+                this.oldGamepadStates.push({buttonsPressed: [], buttonsClicked: []});
             }
 
             if (!this.liveGamepadStates[button.gamepad].buttonsPressed.includes(button.index)) {
                 this.liveGamepadStates[button.gamepad].buttonsPressed.push(button.index);
+            }
+
+            if (!this.liveGamepadStates[button.gamepad].buttonsClicked.includes(button.index)) {
+                this.liveGamepadStates[button.gamepad].buttonsClicked.push(button.index);
             }
         });
     }
@@ -48,18 +53,22 @@ export class InputManager {
 
     public update() {
         while (this.oldGamepadStates.length < this.liveGamepadStates.length) {
-            this.oldGamepadStates.push({ buttonsPressed: [] });
+            this.oldGamepadStates.push({buttonsPressed: [], buttonsClicked: []});
         }
 
         for (let i = 0; i < this.liveGamepadStates.length; i++) {
-            this.oldGamepadStates[i] = { buttonsPressed: [...this.liveGamepadStates[i].buttonsPressed] };
+            this.oldGamepadStates[i] = {
+                buttonsPressed: [...this.liveGamepadStates[i].buttonsPressed],
+                buttonsClicked: [...this.liveGamepadStates[i].buttonsClicked]
+            };
             this.liveGamepadStates[i].buttonsPressed = [];
+            this.liveGamepadStates[i].buttonsClicked = [];
         }
     }
 
     public getControllerState(gamepadIndex: number): GamepadState {
         if (gamepadIndex >= this.oldGamepadStates.length) {
-            return { buttonsPressed: [] };
+            return {buttonsPressed: [], buttonsClicked: []};
         }
         return this.oldGamepadStates[gamepadIndex];
     }

@@ -1,6 +1,7 @@
 import puppeteer, { Browser, Page } from 'puppeteer';
 import { EventEmitter } from 'events';
 import buttons from './xbox-buttons.json' with { type: "json" };
+import * as trace_events from "node:trace_events";
 
 declare global {
     interface Window {
@@ -12,6 +13,8 @@ declare global {
 export function getControllerIndexFromXbox(xboxString: string) {
     return buttons.indexOf(xboxString);
 }
+
+type test = readonly GamepadButton[];
 
 export default class GamepadService {
     private eventEmitter: EventEmitter;
@@ -40,6 +43,8 @@ export default class GamepadService {
 
         await page.evaluate(({buttons, pollInterval, noiseThreshold}) => {
             const intervals: Record<number, number> = {};
+
+            let lastPressedButtons: test[] = [];
 
             const handleGamepadConnected = (e: GamepadEvent) => {
                 let gp = navigator.getGamepads()[e.gamepad.index];
@@ -70,11 +75,14 @@ export default class GamepadService {
 
                 for (let i = 0; i < gp.buttons.length; i++) {
                     if (gp.buttons[i].pressed) {
+                        const clicked = !lastPressedButtons[gamepadIndex][i].pressed;
                         const buttonName = buttons[i] || `Button ${i}`;
-                        window.sendEventToProcessHandle(buttonName, { pressed: true, gamepad: gp.index });
+                        window.sendEventToProcessHandle(buttonName, { pressed: true, clicked: clicked, gamepad: gp.index });
                         window.sendEventToProcessHandle('button', { name: buttonName, index: i, gamepad: gp.index });
                     }
                 }
+
+                lastPressedButtons[gamepadIndex]=gp.buttons;
             }
 
             window.addEventListener("gamepadconnected", (e) => {
