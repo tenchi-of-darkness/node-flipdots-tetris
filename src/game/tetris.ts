@@ -50,20 +50,6 @@ let globalQuitRequestId = 0;
 export class TetrisGameAdapter {
     private game: TetrisGame = new TetrisGame();
 
-    private handledRestartRequestId = 0;
-    private handledQuitRequestId = 0;
-
-    private lastButtonStates: ButtonStates = {
-        left: false,
-        right: false,
-        hardDrop: false,
-        softDrop: false,
-        rotateCW: false,
-        rotateCCW: false,
-        restart: false,
-        pause: false,
-    };
-
     executeTick(controllerState: GamepadState): GameData {
         const { moveHorizontal, moveRotation, dropHard, dropSoft, restartPressed, pausePressed, up, down, confirm } = this.handleInput(controllerState);
 
@@ -79,106 +65,12 @@ export class TetrisGameAdapter {
         }
 
         if (this.game.gameOver && restartPressed) {
-            // this.game = new TetrisGame();
-            globalRestartRequestId++;
-            
-            this.lastButtonStates = {
-                left: false,
-                right: false,
-                hardDrop: false,
-                softDrop: false,
-                rotateCW: false,
-                rotateCCW: false,
-                restart: false,
-                pause: false,
-            };
-            return this.executeTick(controllerState);
+            this.game = new TetrisGame();
         }
 
-        if (this.game.gameOver) {
-            return {
-                currentPiece: {
-                    x: this.game.currentPiece.x,
-                    y: this.game.currentPiece.y,
-                    rotation: this.game.currentPiece.rotation,
-                    piece: Pieces[this.game.currentPiece.type]
-                },
-                nextPiece: { rotation: this.game.nextPiece.rotation, piece: Pieces[this.game.nextPiece.type] },
-                blockGrid: this.game.placedBlocks,
-                score: this.game.score,
-                level: this.game.level,
-                lines: this.game.lines,
-                gameOver: this.game.gameOver,
-                paused: globalPaused,
-                pauseSelection: globalPauseSelection,
-            }
+        if (!this.game.gameOver) {
+            this.game.executeTick(moveHorizontal, moveRotation, dropSoft, dropHard);
         }
-
-        if (globalPaused) {
-        // already in pause
-        if (pausePressed) {
-            // unpause from any controller
-            globalPaused = false;
-        } else {
-            // move selection
-            if (up || down) {
-                globalPauseSelection =
-                    globalPauseSelection === "restart" ? "quit" : "restart";
-            }
-
-            // confirm selection
-            if (confirm) {
-                if (globalPauseSelection === "restart") {
-                    globalRestartRequestId++;
-                } else {
-                    globalQuitRequestId++;
-                }
-                globalPaused = false;
-            }
-        }
-
-        // while paused (or just confirmed), DO NOT advance the game
-        return {
-            currentPiece: {
-                x: this.game.currentPiece.x,
-                y: this.game.currentPiece.y,
-                rotation: this.game.currentPiece.rotation,
-                piece: Pieces[this.game.currentPiece.type]
-            },
-            nextPiece: { rotation: this.game.nextPiece.rotation, piece: Pieces[this.game.nextPiece.type] },
-            blockGrid: this.game.placedBlocks,
-            score: this.game.score,
-            level: this.game.level,
-            lines: this.game.lines,
-            gameOver: this.game.gameOver,
-            paused: globalPaused,
-            pauseSelection: globalPauseSelection,
-        };
-    }
-
-    // not currently paused
-    if (pausePressed) {
-        globalPaused = true;
-        globalPauseSelection = "restart";
-        return {
-            currentPiece: {
-                x: this.game.currentPiece.x,
-                y: this.game.currentPiece.y,
-                rotation: this.game.currentPiece.rotation,
-                piece: Pieces[this.game.currentPiece.type]
-            },
-            nextPiece: { rotation: this.game.nextPiece.rotation, piece: Pieces[this.game.nextPiece.type] },
-            blockGrid: this.game.placedBlocks,
-            score: this.game.score,
-            level: this.game.level,
-            lines: this.game.lines,
-            gameOver: this.game.gameOver,
-            paused: globalPaused,
-            pauseSelection: globalPauseSelection,
-        };
-    }
-
-        this.game.executeTick(moveHorizontal, moveRotation, dropSoft, dropHard);
 
         return {
             currentPiece: {
@@ -200,15 +92,22 @@ export class TetrisGameAdapter {
     }
 
     private handleInput(controllerState: GamepadState) {
-        const currentButtonStates = Object.fromEntries(
+        const currentButtonPresses = Object.fromEntries(
             Object.entries(buttonMapping).map(([action, buttonName]) => [
                 action,
                 controllerState.buttonsPressed.includes(getControllerIndexFromXbox(buttonName))
             ])
         ) as ButtonStates;
 
+        const currentButtonClicks = Object.fromEntries(
+            Object.entries(buttonMapping).map(([action, buttonName]) => [
+                action,
+                controllerState.buttonsClicked.includes(getControllerIndexFromXbox(buttonName))
+            ])
+        ) as ButtonStates;
+
         const wasJustPressed = (action: keyof ButtonStates): boolean => {
-            return currentButtonStates[action] && !this.lastButtonStates[action];
+            return currentButtonClicks[action];
         };
 
         const restartPressed = wasJustPressed('restart');
@@ -236,11 +135,9 @@ export class TetrisGameAdapter {
             dropHard = true;
         }
 
-        const dropSoft = currentButtonStates.softDrop;
+        const dropSoft = currentButtonPresses.softDrop;
 
-        this.lastButtonStates = currentButtonStates;
-
-        return { moveHorizontal, moveRotation, dropHard, dropSoft, restartPressed, pausePressed, up, down, confirm};
+        return { moveHorizontal, moveRotation, dropHard, dropSoft, restartPressed };
     }
 }
 
