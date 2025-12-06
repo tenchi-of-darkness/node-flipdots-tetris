@@ -30,6 +30,7 @@ export class Renderer {
     private readonly ctx: CanvasRenderingContext2D;
     private readonly isDev: boolean;
     private readonly outputDir = "./output";
+    private blinkCounter = 0;
 
     constructor(isDev: boolean) {
         this.isDev = isDev;
@@ -66,8 +67,10 @@ export class Renderer {
     }
 
     public render(gameData: GameData[]) {
+        this.blinkCounter++;
         this.clearCanvas();
         this.prepareContext();
+
 
         if (!gameData || gameData.length === 0) {
             this.drawStartScreen();
@@ -235,19 +238,44 @@ export class Renderer {
         this.ctx.fillRect(14, 7, 56, 1);
     }
 
-    // --- NAME ENTRY SCREEN ---
     private drawNameEntryScreen(gameData: GameData) {
         this.clearCanvas();
         this.prepareContext();
 
-        drawText(this.ctx, "ENTER NAME", 10, 1);
+          drawText(this.ctx, "ENTER NAME", 10, 7);
 
-        drawText(this.ctx, gameData.playerName, 30, 10);
+    const name = gameData.playerName;
+    const index = gameData.nameIndex;
 
-        const arrowX = 30 + gameData.nameIndex * 6;
-        drawText(this.ctx, "^", arrowX, 17);
+    const baseX = 30;
+    const y = 16;
+    const underlineY = y + 2; 
 
-        this.finalizeFrame();
+    for (let i = 0; i < 3; i++) {
+        let letter = name[i];
+
+        if (i !== index) {
+            letter = letter.toUpperCase(); 
+        }
+
+        drawText(this.ctx, letter, baseX + i * 8, y);
+    }
+
+    for (let i = 0; i < 3; i++) {
+        const x = baseX + i * 8;
+
+        const isBlinkOn = Math.floor(this.blinkCounter / 8) % 2 === 0;
+
+        if (i === index) {
+            if (isBlinkOn) {
+                drawText(this.ctx, "_", x, underlineY);
+            }
+        } else {
+            drawText(this.ctx, "_", x, underlineY);
+        }
+    }
+
+    this.finalizeFrame();
     }
 
     private drawLeaderboardScreen(gameData: GameData) {
