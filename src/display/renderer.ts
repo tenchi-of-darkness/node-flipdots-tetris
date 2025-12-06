@@ -97,6 +97,12 @@ export class Renderer {
             this.finalizeFrame();
             return;
         }
+        // --- LEADERBOARD SCREEN ---
+    if (gameData[0]?.showLeaderboard) {
+        this.drawLeaderboardScreen(gameData[0]);
+        this.finalizeFrame();
+        return;
+    }
 
         // Draw each active game board.
         for (let i = 0; i < gameData.length; i++) {
@@ -224,7 +230,7 @@ export class Renderer {
             if (gameData1.score >= 10) score1X = 7;
             if (gameData1.score >= 100) score1X = 5
             if (gameData1.score >= 1000) score1X = 1;
-
+            
             let score2X = 69;
             if (gameData2.score >= 10) score2X = 66;
             if (gameData2.score >= 100) score2X = 64;
@@ -281,6 +287,38 @@ export class Renderer {
      * It converts the image to black and white and then either writes it
      * to a file (dev) or sends it to the flip-dot display (prod).
      */
+    private drawLeaderboardScreen(gameData: GameData) {
+    this.clearCanvas();
+    this.prepareContext();
+
+    const scores = gameData.highscores; // <-- echte top 3 lijst
+
+    drawText(this.ctx, "TOP", 2, 1);
+    drawText(this.ctx, "NAME", 23, 1);
+    drawText(this.ctx, "SCORE", 52, 1);
+
+    const labels = ["1", "2", "3"];
+    let y = 8;
+
+    for (let i = 0; i < 3; i++) {
+        const entry = scores[i] ?? { name: "---", score: 0 };
+
+        drawText(this.ctx, labels[i], 2, y);
+        drawText(this.ctx, entry.name, 23, y);
+        drawText(this.ctx, `${entry.score}`, 52, y);
+
+        y += 7;
+    }
+
+    this.finalizeFrame();
+
+    this.finalizeFrame();
+}
+
+
+
+
+
     private finalizeFrame() {
         this.convertToBlackAndWhite();
 

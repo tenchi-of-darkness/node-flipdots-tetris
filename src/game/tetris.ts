@@ -2,6 +2,9 @@ import { Pieces, PiecesKeyType } from "./pieces.js";
 import { getRandomPiece, getRandomRotation } from "./random.js";
 import { canMovePiece, canRotatePiece, MovablePiece, PlacedBlocks, pushPieceBlocks } from "./collision.js";
 import { getControllerIndexFromXbox, GamepadState } from "../input/index.js";
+import { loadHighscores, saveHighscores, ScoreEntry } from "./highscore.js";
+
+type ScreenState = "PLAYING" | "GAME_OVER" | "LEADERBOARD";
 
 const PieceStartingLocation = { x: 4, y: 0 }
 const BOARD_WIDTH = 10;
@@ -31,13 +34,18 @@ export interface GameData {
     };
     blockGrid: PlacedBlocks
     score: number;
+    highscores: ScoreEntry[];   // <-- dit is nu de lijst met 3 scores
     level: number;
     lines: number;
     gameOver?: boolean;
+    showLeaderboard?: boolean;
+
 }
 
 export class TetrisGameAdapter {
     private game: TetrisGame = new TetrisGame();
+    
+    private screenState: ScreenState = "PLAYING";
 
     private lastButtonStates: ButtonStates = {
         left: false,
@@ -49,57 +57,71 @@ export class TetrisGameAdapter {
         restart: false,
     };
 
-    executeTick(controllerState: GamepadState): GameData {
-        const { moveHorizontal, moveRotation, dropHard, dropSoft, restartPressed } = this.handleInput(controllerState);
 
-        if (this.game.gameOver && restartPressed) {
-            this.game = new TetrisGame();
-            this.lastButtonStates = {
-                left: false,
-                right: false,
-                hardDrop: false,
-                softDrop: false,
-                rotateCW: false,
-                rotateCCW: false,
-                restart: false,
-            };
-            return this.executeTick(controllerState);
-        }
+    private buildGameData(extra: any = {}): GameData {
+    return {
+        currentPiece: {
+            x: this.game.currentPiece.x,
+            y: this.game.currentPiece.y,
+            rotation: this.game.currentPiece.rotation,
+            piece: Pieces[this.game.currentPiece.type],
+        },
+        nextPiece: {
+            rotation: this.game.nextPiece.rotation,
+            piece: Pieces[this.game.nextPiece.type]
+        },
+        blockGrid: this.game.placedBlocks,
+        score: this.game.score,
+highscores: this.game.highscores,
+        level: this.game.level,
+        lines: this.game.lines,
+        gameOver: this.game.gameOver,
+        showLeaderboard: this.game.showLeaderboard,   // <-- BELANGRIJK
+        ...extra
+    };
+}
+
+
+    executeTick(controllerState: GamepadState): GameData {
+    const input = this.handleInput(controllerState);
+
+    // --- STATE: PLAYING ---
+    if (this.screenState === "PLAYING") {
+        this.game.executeTick(input.moveHorizontal, input.moveRotation, input.dropSoft, input.dropHard);
 
         if (this.game.gameOver) {
-            return {
-                currentPiece: {
-                    x: this.game.currentPiece.x,
-                    y: this.game.currentPiece.y,
-                    rotation: this.game.currentPiece.rotation,
-                    piece: Pieces[this.game.currentPiece.type]
-                },
-                nextPiece: { rotation: this.game.nextPiece.rotation, piece: Pieces[this.game.nextPiece.type] },
-                blockGrid: this.game.placedBlocks,
-                score: this.game.score,
-                level: this.game.level,
-                lines: this.game.lines,
-                gameOver: this.game.gameOver,
-            }
+            this.screenState = "GAME_OVER";
         }
 
-        this.game.executeTick(moveHorizontal, moveRotation, dropSoft, dropHard);
-
-        return {
-            currentPiece: {
-                x: this.game.currentPiece.x,
-                y: this.game.currentPiece.y,
-                rotation: this.game.currentPiece.rotation,
-                piece: Pieces[this.game.currentPiece.type]
-            },
-            nextPiece: { rotation: this.game.nextPiece.rotation, piece: Pieces[this.game.nextPiece.type] },
-            blockGrid: this.game.placedBlocks,
-            score: this.game.score,
-            level: this.game.level,
-            lines: this.game.lines,
-            gameOver: this.game.gameOver,
-        }
+        return this.buildGameData();
     }
+
+    // --- STATE: GAME OVER (eerste scherm) ---
+    if (this.screenState === "GAME_OVER") {
+        if (input.restartPressed) {
+            this.game.showLeaderboard = true;   // <-- ACTIVATE
+            this.screenState = "LEADERBOARD"; 
+  // → eerst leaderboard scherm
+        }
+
+        return this.buildGameData();
+    }
+
+    // --- STATE: LEADERBOARD ---
+    if (this.screenState === "LEADERBOARD") {
+        if (input.restartPressed) {
+            // nieuwe game starten
+            this.game = new TetrisGame();
+            this.game.showLeaderboard = false;   // <-- RESET
+            this.screenState = "PLAYING";
+        }
+
+        return this.buildGameData({ showLeaderboard: true });
+    }
+
+    return this.buildGameData();
+}
+
 
     private handleInput(controllerState: GamepadState) {
         const currentButtonStates = Object.fromEntries(
@@ -161,6 +183,9 @@ let newGameIndex = 0;
 
 export class TetrisGame {
     gameOver: boolean = false;
+    showLeaderboard: boolean = false;
+
+    private _highscores: ScoreEntry[] = loadHighscores();
     private ticks: number = 0;
     private _placedBlocks: PlacedBlocks = [];
     private _currentPiece: MovablePiece;
@@ -200,6 +225,11 @@ export class TetrisGame {
     get lines() {
         return this._lines;
     }
+
+    get highscores() {
+        return this._highscores;
+    }
+
 
     executeTick(moveX: number, rotateMove: number, dropSoft: boolean, dropHard: boolean) {
         this.ticks++;
@@ -250,8 +280,16 @@ export class TetrisGame {
             this.spawnNewPiece();
 
             if (!canMovePiece(0, 1, this.currentPiece, this._placedBlocks)) {
-                this.gameOver = true;
-            }
+
+    // Update top 3 highscores
+    this.updateHighscores();
+
+    // Game eindigt
+    this.gameOver = true;
+    this.showLeaderboard = false;
+
+}
+
             return false;
         }
     }
@@ -300,4 +338,23 @@ export class TetrisGame {
             type: getRandomPiece(this._gameIndex),
         }
     }
+    private updateHighscores() {
+    const playerName = "AAA";  // TODO: later naam-invoer maken
+
+    // Voeg nieuwe score toe
+    this._highscores.push({
+        name: playerName,
+        score: this._score,
+    });
+
+    // Sorteer desc op score
+    this._highscores.sort((a, b) => b.score - a.score);
+
+    // Hou alleen top 3
+    this._highscores = this._highscores.slice(0, 3);
+
+    // Sla op in JSON
+    saveHighscores(this._highscores);
+}
+
 }

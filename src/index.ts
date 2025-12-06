@@ -23,6 +23,7 @@ ticker.start(async ({deltaTime, elapsedTime}: { deltaTime: number, elapsedTime: 
         console.time("Write frame");
         console.log(`Rendering a ${renderer.getWidth()}x${renderer.getHeight()} canvas`);
         console.log("View at http://localhost:3000/view");
+        
     }
 
     inputManager.update();
