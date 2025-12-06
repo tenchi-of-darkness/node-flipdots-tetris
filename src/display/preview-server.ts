@@ -2,10 +2,10 @@ import http from "node:http";
 import fs from "node:fs";
 
 http
-	.createServer((req, res) => {
-		if (req.url === "/view") {
-			res.writeHead(200, { "Content-Type": "text/html" });
-			res.end(`
+    .createServer((req, res) => {
+        if (req.url === "/view") {
+            res.writeHead(200, {"Content-Type": "text/html"});
+            res.end(`
       <html lang="en">
         <head>
         </head>
@@ -21,9 +21,9 @@ http
         </body>
       </html>
     `);
-		} else if (req.url?.startsWith("/frame.png")) {
-			res.writeHead(200, { "Content-Type": "image/png" });
-			res.end(fs.readFileSync("./output/frame.png"));
-		}
-	})
-	.listen(3000);
+        } else if (req.url?.startsWith("/frame.png")) {
+            res.writeHead(200, {"Content-Type": "image/png"});
+            res.end(fs.readFileSync("./output/frame.png"));
+        }
+    })
+    .listen(3000);

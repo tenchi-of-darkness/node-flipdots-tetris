@@ -50,6 +50,31 @@ export class Renderer {
     }
 
     /**
+     * The main rendering function, called on every frame.
+     * @param gameData An array of game data objects, one for each active player.
+     * @param pauseSelection Current selection of pause menu options (undefined if not paused)
+     */
+    public renderUnpaused(gameData: GameData[]) {
+        this.renderGame(gameData, false);
+        this.drawScores(gameData);
+        this.finalizeFrame();
+    }
+
+    public renderPaused(gameData: GameData[], pauseSelection: "restart" | "quit") {
+        this.renderGame(gameData, true);
+        this.drawPause(pauseSelection, gameData.length === 2);
+        this.finalizeFrame();
+    }
+
+    public getWidth(): number {
+        return this.display.width;
+    }
+
+    public getHeight(): number {
+        return this.display.height;
+    }
+
+    /**
      * Configures and creates the flip-dot display emulator instance.
      * The transport method (IP for dev, Serial for prod) is chosen based on the isDev flag.
      */
@@ -99,23 +124,6 @@ export class Renderer {
             const boardX = 1 + i * 70;
             this.drawBoard(gameData, boardX, i, paused);
         }
-    }
-
-    /**
-     * The main rendering function, called on every frame.
-     * @param gameData An array of game data objects, one for each active player.
-     * @param pauseSelection Current selection of pause menu options (undefined if not paused)
-     */
-    public renderUnpaused(gameData: GameData[]) {
-        this.renderGame(gameData, false);
-        this.drawScores(gameData);
-        this.finalizeFrame();
-    }
-
-    public renderPaused(gameData: GameData[], pauseSelection: "restart" | "quit"){
-        this.renderGame(gameData, true);
-        this.drawPause(pauseSelection, gameData.length === 2);
-        this.finalizeFrame();
     }
 
     private drawPause(pauseSelection: "restart" | "quit", isMultiplayer: boolean) {
@@ -192,7 +200,6 @@ export class Renderer {
         }
     }
 
-
     private drawBoardOutline(x: number) {
         this.ctx.fillRect(x, 0, 12, 28);
         this.ctx.clearRect(x + 1, 0, 10, 27);
@@ -218,13 +225,11 @@ export class Renderer {
         });
     }
 
-
     private drawPlacedBlocks(boardX: number, blockGrid: any[]) {
         blockGrid.forEach((block) => {
             this.ctx.fillRect(boardX + 1 + block.x, block.y, 1, 1);
         });
     }
-
 
     private getPauseMenuData(pauseSelection: "restart" | "quit") {
         const pauseText = "PAUSED";
@@ -266,7 +271,6 @@ export class Renderer {
 
         this.drawPauseMenuLines(data.lines, startX, baseY);
     }
-
 
     private drawScores(gameData: GameData[]) {
         if (gameData.length === 2) {
@@ -389,13 +393,5 @@ export class Renderer {
         if (this.display.isDirty()) {
             this.display.flush();
         }
-    }
-
-    public getWidth(): number {
-        return this.display.width;
-    }
-
-    public getHeight(): number {
-        return this.display.height;
     }
 }

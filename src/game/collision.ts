@@ -9,10 +9,10 @@ export interface MovablePiece {
 
 export const canMovePiece = (xMove: number, yMove: number, piece: MovablePiece, placedBlocks: PlacedBlocks) => {
     for (const pieceBlock of Pieces[piece.type][piece.rotation]) {
-        if (pieceBlock.y + piece.y + yMove > 26){
+        if (pieceBlock.y + piece.y + yMove > 26) {
             return false;
         }
-        if (pieceBlock.x + piece.x + xMove < 0 || pieceBlock.x + piece.x + xMove > 9){
+        if (pieceBlock.x + piece.x + xMove < 0 || pieceBlock.x + piece.x + xMove > 9) {
             return false;
         }
         for (const block of placedBlocks) {
@@ -26,11 +26,11 @@ export const canMovePiece = (xMove: number, yMove: number, piece: MovablePiece, 
 
 
 export const canRotatePiece = (rotationMove: number, piece: MovablePiece, placedBlocks: PlacedBlocks) => {
-    for (const pieceBlock of Pieces[piece.type][(piece.rotation + rotationMove+4)%4]) {
-        if (pieceBlock.y + piece.y > 26){
+    for (const pieceBlock of Pieces[piece.type][(piece.rotation + rotationMove + 4) % 4]) {
+        if (pieceBlock.y + piece.y > 26) {
             return false;
         }
-        if (pieceBlock.x + piece.x < 0 || pieceBlock.x + piece.x > 9){
+        if (pieceBlock.x + piece.x < 0 || pieceBlock.x + piece.x > 9) {
             return false;
         }
         for (const block of placedBlocks) {

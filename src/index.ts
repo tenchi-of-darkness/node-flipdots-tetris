@@ -1,9 +1,8 @@
 import {Ticker} from "./utils/index.js";
 import {FPS} from "./config/index.js";
 import {GameData, TetrisGameAdapter} from "./game/index.js";
-import {getXboxStringFromControllerIndex, InputManager} from "./input/index.js";
+import {getXboxStringFromControllerIndex, initializeInput, InputManager} from "./input/index.js";
 import {Renderer} from "./display/index.js";
-import {initializeInput} from "./input/index.js";
 
 const IS_DEV = process.argv.includes("--dev");
 
