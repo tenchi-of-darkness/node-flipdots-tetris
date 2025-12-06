@@ -14,6 +14,7 @@ const buttonMapping = {
     rotateCW: "B",
     rotateCCW: "A",
     restart: "Y",
+    pause: "BUTTON_MENU",
 };
 
 type ButtonStates = Record<keyof typeof buttonMapping, boolean>;
@@ -39,11 +40,15 @@ export interface GameData {
 export class TetrisGameAdapter {
     private game: TetrisGame = new TetrisGame();
 
-    executeTick(controllerState: GamepadState): GameData {
+    executeTick(controllerState: GamepadState, pauseAction?: "quit" | "restart"): GameData {
         const { moveHorizontal, moveRotation, dropHard, dropSoft, restartPressed } = this.handleInput(controllerState);
 
-        if (this.game.gameOver && restartPressed) {
+        if (pauseAction === "restart") {
             this.game = new TetrisGame();
+        }
+
+        if (pauseAction === "quit") {
+            this.game.gameOver = true;
         }
 
         if (!this.game.gameOver) {

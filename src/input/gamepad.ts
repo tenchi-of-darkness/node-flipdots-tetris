@@ -13,6 +13,10 @@ export function getControllerIndexFromXbox(xboxString: string) {
     return buttons.indexOf(xboxString);
 }
 
+export function getXboxStringFromControllerIndex(index: number) {
+    return buttons[index];
+}
+
 type GamePadButtonArray = readonly GamepadButton[];
 
 export default class GamepadService {
