@@ -52,7 +52,6 @@ export class Renderer {
     /**
      * The main rendering function, called on every frame.
      * @param gameData An array of game data objects, one for each active player.
-     * @param pauseSelection Current selection of pause menu options (undefined if not paused)
      */
     public renderUnpaused(gameData: GameData[]) {
         this.renderGame(gameData, false);
@@ -156,6 +155,7 @@ export class Renderer {
     private drawBoard(gameData: GameData[], boardX: number, i: number, paused: boolean) {
         if (gameData.length > 1) {
             if (gameData[0].gameOver && gameData[1].gameOver) {
+                if(paused) return;
                 if (i === 0) {
                     drawText(this.ctx, 'GAME', 30, 12);
                     drawText(this.ctx, 'OVER', 30, 20);
@@ -170,6 +170,9 @@ export class Renderer {
                 drawText(this.ctx, 'OVER', 3, 16);
                 return;
             }
+            
+            if(paused) return;
+
             const textX = i === 0 ? 10 : 51;
             const playerLabelX = i === 0 ? 16 : 57;
             const player = i === 0 ? 'P1' : 'P2';
