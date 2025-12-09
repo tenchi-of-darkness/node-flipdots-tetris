@@ -21,6 +21,7 @@ const buttonMapping = {
     rotateCW: "A",
     rotateCCW: "B",
     restart: "Y",
+    pause: "BUTTON_MENU",
 };
 
 type ButtonStates = Record<keyof typeof buttonMapping, boolean>;
