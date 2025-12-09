@@ -165,17 +165,7 @@ export class Renderer {
             if (gameData.length === 1) {
                 drawText(this.ctx, 'GAME', 3, 8);
                 drawText(this.ctx, 'OVER', 3, 16);
-                return;
             }
-
-            if (paused) return;
-
-            const textX = i === 0 ? 10 : 51;
-            const playerLabelX = i === 0 ? 16 : 57;
-            const player = i === 0 ? 'P1' : 'P2';
-            drawText(this.ctx, player, playerLabelX, 1);
-            drawText(this.ctx, 'GAME', textX, 8);
-            drawText(this.ctx, 'OVER', textX, 15);
             return;
         }
 
