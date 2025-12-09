@@ -1,12 +1,12 @@
 // src/display/renderer.ts
-import { Canvas, CanvasRenderingContext2D as NodeCanvasContext, createCanvas } from "canvas";
-import { Display } from "@owowagency/flipdot-emu";
+import {Canvas, CanvasRenderingContext2D as NodeCanvasContext, createCanvas} from "canvas";
+import {Display} from "@owowagency/flipdot-emu";
 import fs from "node:fs";
 import path from "node:path";
-import { GameData } from "../game/index.js";
-import { LAYOUT } from "../config/index.js";
-import { drawText } from "./utils.js";
-import { StartScreenAnimator } from "./owow-animation.js";
+import {GameData} from "../game/index.js";
+import {LAYOUT} from "../config/index.js";
+import {drawText} from "./utils.js";
+import {StartScreenAnimator} from "./owow-animation.js";
 
 function textWidth(text: string): number {
     return text.length * 6 - 1;
@@ -25,6 +25,7 @@ export class Renderer {
     private readonly isDev: boolean;
     private readonly outputDir = "./output";
     private readonly startScreenAnimator: StartScreenAnimator;
+    private blinkCounter = 0;
 
     constructor(isDev: boolean) {
         this.isDev = isDev;
@@ -80,29 +81,39 @@ export class Renderer {
         });
     }
 
-    /**
-     * Sets up the canvas context and registers custom fonts.
-     */
     private initialize() {
         if (!fs.existsSync(this.outputDir)) {
             fs.mkdirSync(this.outputDir, {recursive: true});
         }
-
 
         this.ctx.imageSmoothingEnabled = false;
         this.ctx.textBaseline = "top";
     }
 
     private renderGame(gameData: GameData[], paused: boolean) {
+        this.blinkCounter++;
+        if (gameData.length === 1) {
+            // --- NAME ENTRY SCREEN ---
+            if (gameData[0].enteringName) {
+                this.drawNameEntryScreen(gameData[0]);
+                return;
+            }
+
+            // --- LEADERBOARD SCREEN ---
+            if (gameData[0].showLeaderboard) {
+                this.drawLeaderboardScreen(gameData[0]);
+                return;
+            }
+        }
+
         this.clearCanvas();
         this.prepareContext();
 
-        // logic: if no TetrisGameAdapter exists for any controller, gameData is empty.
         if (!gameData || gameData.length === 0) {
             this.startScreenAnimator.update(this.ctx);
-            this.finalizeFrame();
             return;
         }
+
 
         // Draw each active game board.
         for (let i = 0; i < gameData.length; i++) {
@@ -141,7 +152,7 @@ export class Renderer {
     private drawBoard(gameData: GameData[], boardX: number, i: number, paused: boolean) {
         if (gameData.length > 1) {
             if (gameData[0].gameOver && gameData[1].gameOver) {
-                if(paused) return;
+                if (paused) return;
                 if (i === 0) {
                     drawText(this.ctx, 'GAME', 30, 12);
                     drawText(this.ctx, 'OVER', 30, 20);
@@ -156,8 +167,8 @@ export class Renderer {
                 drawText(this.ctx, 'OVER', 3, 16);
                 return;
             }
-            
-            if(paused) return;
+
+            if (paused) return;
 
             const textX = i === 0 ? 10 : 51;
             const playerLabelX = i === 0 ? 16 : 57;
@@ -262,6 +273,8 @@ export class Renderer {
     }
 
     private drawScores(gameData: GameData[]) {
+        if(gameData.some(x => x.enteringName || x.showLeaderboard)) return;
+
         if (gameData.length === 2) {
             this.drawTwoPlayerScore(gameData[0], gameData[1]);
         } else if (gameData.length === 1) {
@@ -278,7 +291,7 @@ export class Renderer {
         if (gameData1.gameOver && gameData2.gameOver) {
             let score1X = 10;
             if (gameData1.score >= 10) score1X = 7;
-            if (gameData1.score >= 100) score1X = 5
+            if (gameData1.score >= 100) score1X = 5;
             if (gameData1.score >= 1000) score1X = 1;
 
             let score2X = 69;
@@ -293,35 +306,12 @@ export class Renderer {
             } else {
                 drawText(this.ctx, "DRAW", 30, 2);
             }
+
             drawText(this.ctx, 'P1', 7, 12);
             drawText(this.ctx, `${gameData1.score}`, score1X, 20);
             drawText(this.ctx, 'P2', 66, 12);
             drawText(this.ctx, `${gameData2.score}`, score2X, 20);
 
-            return;
-        } else if (gameData1.gameOver) {
-            let score1X = 19;
-            if (gameData1.score >= 10) score1X = 16;
-            if (gameData1.score >= 100) score1X = 13;
-            if (gameData1.score >= 1000) score1X = 10;
-
-            this.ctx.fillRect(43, 0, 1, 28);
-            this.ctx.fillRect(43, 7, 28, 1);
-            drawText(this.ctx, 'P2', 52, 1);
-            drawText(this.ctx, `${gameData1.score}`, score1X, 22);
-            drawText(this.ctx, `${gameData2.score}`, 46, 10);
-            return;
-        } else if (gameData2.gameOver) {
-            let score2X = 60;
-            if (gameData2.score >= 10) score2X = 57;
-            if (gameData2.score >= 100) score2X = 54;
-            if (gameData2.score >= 1000) score2X = 51;
-
-            this.ctx.fillRect(40, 0, 1, 28);
-            this.ctx.fillRect(13, 7, 28, 1);
-            drawText(this.ctx, 'P1', 21, 1);
-            drawText(this.ctx, `${gameData1.score}`, 15, 10);
-            drawText(this.ctx, `${gameData2.score}`, score2X, 22);
             return;
         }
 
@@ -332,11 +322,69 @@ export class Renderer {
         this.ctx.fillRect(14, 7, 56, 1);
     }
 
-    /**
-     * After all drawing is done, this function processes the canvas.
-     * It converts the image to black and white and then either writes it
-     * to a file (dev) or sends it to the flip-dot display (prod).
-     */
+    private drawNameEntryScreen(gameData: GameData) {
+        this.clearCanvas();
+        this.prepareContext();
+        drawText(this.ctx, "ENTER NAME", 10, 7);
+
+        const name = gameData.playerName;
+        const index = gameData.nameIndex;
+
+        const baseX = 30;
+        const y = 16;
+        const underlineY = y + 2;
+
+        for (let i = 0; i < 3; i++) {
+            let letter = name[i];
+
+            if (i !== index) {
+                letter = letter.toUpperCase();
+            }
+
+            drawText(this.ctx, letter, baseX + i * 8, y);
+        }
+
+        for (let i = 0; i < 3; i++) {
+            const x = baseX + i * 8;
+
+            const isBlinkOn = Math.floor(this.blinkCounter / 8) % 2 === 0;
+
+            if (i === index) {
+                if (isBlinkOn) {
+                    drawText(this.ctx, "_", x, underlineY);
+                }
+            } else {
+                drawText(this.ctx, "_", x, underlineY);
+            }
+        }
+    }
+
+    private drawLeaderboardScreen(gameData: GameData) {
+        this.clearCanvas();
+        this.prepareContext();
+
+        const scores = gameData.highscores;
+
+        drawText(this.ctx, "TOP", 2, 1);
+        drawText(this.ctx, "NAME", 23, 1);
+        drawText(this.ctx, "SCORE", 52, 1);
+
+        const labels = ["1", "2", "3"];
+        let y = 8;
+
+        for (let i = 0; i < 3; i++) {
+            const entry = scores[i] ?? {name: "---", score: 0};
+
+            drawText(this.ctx, labels[i], 2, y);
+            drawText(this.ctx, entry.name, 23, y);
+            drawText(this.ctx, `${entry.score}`, 52, y);
+
+            y += 7;
+        }
+
+        this.finalizeFrame();
+    }
+
     private finalizeFrame() {
         this.convertToBlackAndWhite();
 
@@ -347,35 +395,24 @@ export class Renderer {
         }
     }
 
-    /**
-     * Converts the canvas image to be purely black and white, which is what the
-     * flip-dot display requires.
-     */
     private convertToBlackAndWhite() {
         const imageData = this.ctx.getImageData(0, 0, this.canvas.width, this.canvas.height);
         const data = imageData.data;
         for (let i = 0; i < data.length; i += 4) {
-            // Simple brightness check
             const brightness = (data[i] + data[i + 1] + data[i + 2]) / 3;
             const color = brightness > 127 ? 255 : 0;
             data[i] = data[i + 1] = data[i + 2] = color;
-            data[i + 3] = 255; // Alpha
+            data[i + 3] = 255;
         }
         this.ctx.putImageData(imageData, 0, 0);
     }
 
-    /**
-     * Saves the current canvas state to a PNG file for the web preview.
-     */
     private writePngForPreview() {
         const filename = path.join(this.outputDir, "frame.png");
         const buffer = this.canvas.toBuffer("image/png");
         fs.writeFileSync(filename, buffer);
     }
 
-    /**
-     * Sends the image data to the physical flip-dot display.
-     */
     private flushToDisplay() {
         const imageData = this.ctx.getImageData(0, 0, this.display.width, this.display.height);
         this.display.setImageData(imageData);
