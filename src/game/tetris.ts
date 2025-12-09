@@ -2,11 +2,9 @@ import {Pieces, PiecesKeyType} from "./pieces.js";
 import {getRandomPiece, getRandomRotation} from "./random.js";
 import {canMovePiece, canRotatePiece, MovablePiece, PlacedBlocks, pushPieceBlocks} from "./collision.js";
 import {GamepadState, getControllerIndexFromXbox} from "../input/index.js";
+import {nextLetter, prevLetter} from "./utils.js";
 import {loadHighscores, saveHighscores, ScoreEntry} from "./highscore.js";
 
-//
-// ★★★   GAME STATES   ★★★
-//
 type ScreenState = "PLAYING" | "GAME_OVER" | "ENTER_NAME" | "LEADERBOARD";
 
 const PieceStartingLocation = {x: 4, y: 0}
@@ -18,9 +16,9 @@ const BOARD_WIDTH = 10;
 const buttonMapping = {
     left: "D_PAD_LEFT",
     right: "D_PAD_RIGHT",
-    hardDrop: "D_PAD_UP",    // gebruiken als LETTER UP
-    softDrop: "D_PAD_DOWN",  // gebruiken als LETTER DOWN
-    rotateCW: "A",           // gebruiken als CONFIRM
+    hardDrop: "D_PAD_UP",
+    softDrop: "D_PAD_DOWN",
+    rotateCW: "A",
     rotateCCW: "B",
     restart: "Y",
 };
@@ -41,17 +39,18 @@ export interface GameData {
         rotation: number;
         piece: { x: number, y: number }[][];
     };
-    blockGrid: PlacedBlocks;
-    score: number;
+    blockGrid: PlacedBlocks
 
-    highscores: ScoreEntry[];
+    score: number;
 
     level: number;
     lines: number;
+
     gameOver?: boolean;
     showLeaderboard?: boolean;
+    highscores: ScoreEntry[];
 
-    // Naam-invoer data
+    // Entering Name Data
     playerName: string;
     nameIndex: number;
     enteringName?: boolean;
@@ -66,39 +65,42 @@ export class TetrisGameAdapter {
 
     private screenState: ScreenState = "PLAYING";
 
-    private lastButtonStates: ButtonStates = {
-        left: false,
-        right: false,
-        hardDrop: false,
-        softDrop: false,
-        rotateCW: false,
-        rotateCCW: false,
-        restart: false,
-    };
-
-    //
-    // ★ NAAM-INVOER VARIABELEN ★
-    //
+    // Entering Name variables
     private nameChars = ["A", "A", "A"];
     private nameIndex = 0;
 
+    executeTick(controllerState: GamepadState, pauseAction?: "quit" | "restart"): GameData {
+        const {
+            moveHorizontal,
+            moveRotation,
+            dropHard,
+            dropSoft,
+            restartPressed,
+            upPressed,
+            downPressed,
+            confirmPressed
+        } = this.handleInput(controllerState);
 
-    //
-    // ★★★  MAIN TICK FUNCTION  ★★★
-    //
-    executeTick(controllerState: GamepadState): GameData {
-        const input = this.handleInput(controllerState);
+        if (pauseAction === "restart") {
+            this.game = new TetrisGame();
+            this.screenState = "PLAYING";
+        }
 
-        switch(this.screenState) {
+        if (pauseAction === "quit") {
+            this.game.gameOver = true;
+            this.screenState = "GAME_OVER";
+        }
+
+        switch (this.screenState) {
             case "PLAYING":
-                this.game.executeTick(input.moveHorizontal, input.moveRotation, input.dropSoft, input.dropHard);
+                this.game.executeTick(moveHorizontal, moveRotation, dropSoft, dropHard);
 
                 if (this.game.gameOver) {
                     this.screenState = "GAME_OVER";
                 }
                 break;
             case "GAME_OVER":
-                if (input.restartPressed) {
+                if (restartPressed) {
                     this.screenState = "ENTER_NAME";
                     this.nameChars = ["A", "A", "A"];
                     this.nameIndex = 0;
@@ -106,19 +108,19 @@ export class TetrisGameAdapter {
                 break;
             case "ENTER_NAME":
                 // letter omhoog
-                if (input.upPressed) {
+                if (upPressed) {
                     this.nameChars[this.nameIndex] =
-                        this.nextLetter(this.nameChars[this.nameIndex]);
+                        nextLetter(this.nameChars[this.nameIndex]);
                 }
 
                 // letter omlaag
-                if (input.downPressed) {
+                if (downPressed) {
                     this.nameChars[this.nameIndex] =
-                        this.prevLetter(this.nameChars[this.nameIndex]);
+                        prevLetter(this.nameChars[this.nameIndex]);
                 }
 
                 // bevestig letter (A knop)
-                if (input.confirmPressed) {
+                if (confirmPressed) {
                     this.nameIndex++;
 
                     // Als 3 letters ingevuld → opslaan en naar leaderboard
@@ -129,7 +131,7 @@ export class TetrisGameAdapter {
                 }
                 break;
             case "LEADERBOARD":
-                if (input.restartPressed) {
+                if (restartPressed) {
                     this.game = new TetrisGame();
                     this.screenState = "PLAYING";
                 }
@@ -150,18 +152,17 @@ export class TetrisGameAdapter {
             blockGrid: this.game.placedBlocks,
             score: this.game.score,
 
-            highscores: this.game.highscores,
-
             level: this.game.level,
             lines: this.game.lines,
             gameOver: this.game.gameOver,
-            showLeaderboard: this.game.showLeaderboard,
+            showLeaderboard: this.screenState === "LEADERBOARD",
+            highscores: this.game.highscores,
 
-            // Naam-invoer
+            // Entering Name Data
             playerName: this.nameChars.join(""),
             nameIndex: this.nameIndex,
             enteringName: this.screenState === "ENTER_NAME"
-        };
+        }
     }
 
 
@@ -169,15 +170,23 @@ export class TetrisGameAdapter {
     // Input handler
     //
     private handleInput(controllerState: GamepadState) {
-        const currentButtonStates = Object.fromEntries(
+        const currentButtonPresses = Object.fromEntries(
             Object.entries(buttonMapping).map(([action, buttonName]) => [
                 action,
                 controllerState.buttonsPressed.includes(getControllerIndexFromXbox(buttonName))
             ])
         ) as ButtonStates;
 
-        const wasJustPressed = (action: keyof ButtonStates): boolean =>
-            currentButtonStates[action] && !this.lastButtonStates[action];
+        const currentButtonClicks = Object.fromEntries(
+            Object.entries(buttonMapping).map(([action, buttonName]) => [
+                action,
+                controllerState.buttonsClicked.includes(getControllerIndexFromXbox(buttonName))
+            ])
+        ) as ButtonStates;
+
+        const wasJustPressed = (action: keyof ButtonStates): boolean => {
+            return currentButtonClicks[action];
+        };
 
         const restartPressed = wasJustPressed('restart');
 
@@ -186,41 +195,27 @@ export class TetrisGameAdapter {
         const confirmPressed = wasJustPressed("rotateCW");
 
         let moveHorizontal = 0;
-        if (wasJustPressed('right')) moveHorizontal = 1;
-        else if (wasJustPressed('left')) moveHorizontal = -1;
+        if (wasJustPressed('right')) {
+            moveHorizontal = 1;
+        } else if (wasJustPressed('left')) {
+            moveHorizontal = -1;
+        }
 
         let moveRotation = 0;
-        if (wasJustPressed('rotateCW')) moveRotation = 1;
-        else if (wasJustPressed('rotateCCW')) moveRotation = -1;
+        if (wasJustPressed('rotateCW')) {
+            moveRotation = 1;
+        } else if (wasJustPressed('rotateCCW')) {
+            moveRotation = -1;
+        }
 
-        const dropHard = wasJustPressed('hardDrop');
-        const dropSoft = currentButtonStates.softDrop;
+        let dropHard = false;
+        if (wasJustPressed('hardDrop')) {
+            dropHard = true;
+        }
 
-        this.lastButtonStates = currentButtonStates;
+        const dropSoft = currentButtonPresses.softDrop;
 
-        return {
-            moveHorizontal,
-            moveRotation,
-            dropHard,
-            dropSoft,
-            restartPressed,
-
-            // Naam invoer
-            upPressed,
-            downPressed,
-            confirmPressed
-        };
-    }
-
-    //
-    // Helper letter functies
-    //
-    private nextLetter(ch: string): string {
-        return ch === "Z" ? "A" : String.fromCharCode(ch.charCodeAt(0) + 1);
-    }
-
-    private prevLetter(ch: string): string {
-        return ch === "A" ? "Z" : String.fromCharCode(ch.charCodeAt(0) - 1);
+        return {moveHorizontal, moveRotation, dropHard, dropSoft, restartPressed, upPressed, downPressed, confirmPressed};
     }
 }
 
@@ -233,55 +228,52 @@ let newGameIndex = 0;
 export class TetrisGame {
     gameOver: boolean = false;
     showLeaderboard: boolean = false;
-
-    private _highscores: ScoreEntry[] = loadHighscores();
-    private ticks: number = 0;
-    private _placedBlocks: PlacedBlocks = [];
-    private _currentPiece: MovablePiece;
-    private _nextPiece: { rotation: number; type: PiecesKeyType };
-
-    private _score: number = 0;
-    private _level: number = 1;
-    private _lines: number = 0;
-
     public _gameIndex = newGameIndex++;
+    private ticks: number = 0;
 
     constructor() {
         this._currentPiece = this.createNewPiece();
         this._nextPiece = this.createNewPiece();
     }
 
+    private _highscores: ScoreEntry[] = loadHighscores();
+
+    private _placedBlocks: PlacedBlocks = [];
+
     get placedBlocks() {
         return this._placedBlocks;
     }
+
+    private _currentPiece: MovablePiece;
 
     get currentPiece() {
         return this._currentPiece;
     }
 
+    private _nextPiece: { rotation: number; type: PiecesKeyType };
+
     get nextPiece() {
         return this._nextPiece;
     }
+
+    private _score: number = 0;
 
     get score() {
         return this._score;
     }
 
+    private _level: number = 1;
+
     get level() {
         return this._level;
     }
+
+    private _lines: number = 0;
 
     get lines() {
         return this._lines;
     }
 
-    get highscores() {
-        return this._highscores;
-    }
-
-    //
-    // game tick
-    //
     executeTick(moveX: number, rotateMove: number, dropSoft: boolean, dropHard: boolean) {
         this.ticks++;
 
