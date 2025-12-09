@@ -1,15 +1,15 @@
-import { Pieces, PiecesKeyType } from "./pieces.js";
-import { getRandomPiece, getRandomRotation } from "./random.js";
-import { canMovePiece, canRotatePiece, MovablePiece, PlacedBlocks, pushPieceBlocks } from "./collision.js";
-import { getControllerIndexFromXbox, GamepadState } from "../input/index.js";
-import { loadHighscores, saveHighscores, ScoreEntry } from "./highscore.js";
+import {Pieces, PiecesKeyType} from "./pieces.js";
+import {getRandomPiece, getRandomRotation} from "./random.js";
+import {canMovePiece, canRotatePiece, MovablePiece, PlacedBlocks, pushPieceBlocks} from "./collision.js";
+import {GamepadState, getControllerIndexFromXbox} from "../input/index.js";
+import {loadHighscores, saveHighscores, ScoreEntry} from "./highscore.js";
 
 //
 // ★★★   GAME STATES   ★★★
 //
 type ScreenState = "PLAYING" | "GAME_OVER" | "ENTER_NAME" | "LEADERBOARD";
 
-const PieceStartingLocation = { x: 4, y: 0 }
+const PieceStartingLocation = {x: 4, y: 0}
 const BOARD_WIDTH = 10;
 
 //
@@ -63,7 +63,7 @@ export interface GameData {
 //
 export class TetrisGameAdapter {
     private game: TetrisGame = new TetrisGame();
-    
+
     private screenState: ScreenState = "PLAYING";
 
     private lastButtonStates: ButtonStates = {
@@ -84,9 +84,58 @@ export class TetrisGameAdapter {
 
 
     //
-    // Data opbouw voor renderer
+    // ★★★  MAIN TICK FUNCTION  ★★★
     //
-    private buildGameData(extra: any = {}): GameData {
+    executeTick(controllerState: GamepadState): GameData {
+        const input = this.handleInput(controllerState);
+
+        switch(this.screenState) {
+            case "PLAYING":
+                this.game.executeTick(input.moveHorizontal, input.moveRotation, input.dropSoft, input.dropHard);
+
+                if (this.game.gameOver) {
+                    this.screenState = "GAME_OVER";
+                }
+                break;
+            case "GAME_OVER":
+                if (input.restartPressed) {
+                    this.screenState = "ENTER_NAME";
+                    this.nameChars = ["A", "A", "A"];
+                    this.nameIndex = 0;
+                }
+                break;
+            case "ENTER_NAME":
+                // letter omhoog
+                if (input.upPressed) {
+                    this.nameChars[this.nameIndex] =
+                        this.nextLetter(this.nameChars[this.nameIndex]);
+                }
+
+                // letter omlaag
+                if (input.downPressed) {
+                    this.nameChars[this.nameIndex] =
+                        this.prevLetter(this.nameChars[this.nameIndex]);
+                }
+
+                // bevestig letter (A knop)
+                if (input.confirmPressed) {
+                    this.nameIndex++;
+
+                    // Als 3 letters ingevuld → opslaan en naar leaderboard
+                    if (this.nameIndex >= 3) {
+                        this.game.updateHighscores(this.nameChars.join(""));
+                        this.screenState = "LEADERBOARD";
+                    }
+                }
+                break;
+            case "LEADERBOARD":
+                if (input.restartPressed) {
+                    this.game = new TetrisGame();
+                    this.screenState = "PLAYING";
+                }
+                break;
+        }
+
         return {
             currentPiece: {
                 x: this.game.currentPiece.x,
@@ -111,89 +160,9 @@ export class TetrisGameAdapter {
             // Naam-invoer
             playerName: this.nameChars.join(""),
             nameIndex: this.nameIndex,
-
-            ...extra
+            enteringName: this.screenState === "ENTER_NAME"
         };
     }
-
-
-    //
-    // ★★★  MAIN TICK FUNCTION  ★★★
-    //
-    executeTick(controllerState: GamepadState): GameData {
-    const input = this.handleInput(controllerState);
-
-    //
-    // ---- STATE: PLAYING ----
-    //
-    if (this.screenState === "PLAYING") {
-        this.game.executeTick(input.moveHorizontal, input.moveRotation, input.dropSoft, input.dropHard);
-
-        if (this.game.gameOver) {
-            this.screenState = "GAME_OVER";
-        }
-
-        return this.buildGameData();
-    }
-
-    //
-    // ---- STATE: GAME_OVER ----
-    //
-    if (this.screenState === "GAME_OVER") {
-        if (input.restartPressed) {
-            this.screenState = "ENTER_NAME";
-            this.nameChars = ["A", "A", "A"];
-            this.nameIndex = 0;
-        }
-
-        return this.buildGameData();
-    }
-
-    //
-    // ---- STATE: ENTER_NAME ----
-    //
-    if (this.screenState === "ENTER_NAME") {
-        // letter omhoog
-        if (input.upPressed) {
-            this.nameChars[this.nameIndex] =
-                this.nextLetter(this.nameChars[this.nameIndex]);
-        }
-
-        // letter omlaag
-        if (input.downPressed) {
-            this.nameChars[this.nameIndex] =
-                this.prevLetter(this.nameChars[this.nameIndex]);
-        }
-
-        // bevestig letter (A knop)
-        if (input.confirmPressed) {
-            this.nameIndex++;
-
-            // Als 3 letters ingevuld → opslaan en naar leaderboard
-            if (this.nameIndex >= 3) {
-                this.game.updateHighscores(this.nameChars.join(""));
-                this.screenState = "LEADERBOARD";
-            }
-        }
-
-        return this.buildGameData({ enteringName: true });
-    }
-
-    //
-    // ---- STATE: LEADERBOARD ----
-    //
-    if (this.screenState === "LEADERBOARD") {
-        if (input.restartPressed) {
-            this.game = new TetrisGame();
-            this.screenState = "PLAYING";
-        }
-
-        return this.buildGameData({ showLeaderboard: true });
-    }
-
-    return this.buildGameData();
-}
-
 
 
     //
@@ -282,13 +251,33 @@ export class TetrisGame {
         this._nextPiece = this.createNewPiece();
     }
 
-    get placedBlocks() { return this._placedBlocks; }
-    get currentPiece() { return this._currentPiece; }
-    get nextPiece() { return this._nextPiece; }
-    get score() { return this._score; }
-    get level() { return this._level; }
-    get lines() { return this._lines; }
-    get highscores() { return this._highscores; }
+    get placedBlocks() {
+        return this._placedBlocks;
+    }
+
+    get currentPiece() {
+        return this._currentPiece;
+    }
+
+    get nextPiece() {
+        return this._nextPiece;
+    }
+
+    get score() {
+        return this._score;
+    }
+
+    get level() {
+        return this._level;
+    }
+
+    get lines() {
+        return this._lines;
+    }
+
+    get highscores() {
+        return this._highscores;
+    }
 
     //
     // game tick
@@ -344,7 +333,7 @@ export class TetrisGame {
     // update highscores met NAAM
     //
     public updateHighscores(playerName: string) {
-        this._highscores.push({ name: playerName, score: this._score });
+        this._highscores.push({name: playerName, score: this._score});
 
         this._highscores.sort((a, b) => b.score - a.score);
         this._highscores = this._highscores.slice(0, 3);
@@ -355,7 +344,7 @@ export class TetrisGame {
     private clearLines() {
         const boardHeight = 27;
 
-        const fullLines = Array.from({ length: boardHeight }, (_, i) => i)
+        const fullLines = Array.from({length: boardHeight}, (_, i) => i)
             .filter(y => this._placedBlocks.filter(b => b.y === y).length === BOARD_WIDTH);
 
         if (fullLines.length > 0) {
@@ -367,7 +356,7 @@ export class TetrisGame {
                 .filter(block => !fullLines.includes(block.y))
                 .forEach(block => {
                     const linesClearedBelow = fullLines.filter(y => y > block.y).length;
-                    newPlacedBlocks.push({ x: block.x, y: block.y + linesClearedBelow });
+                    newPlacedBlocks.push({x: block.x, y: block.y + linesClearedBelow});
                 });
             this._placedBlocks = newPlacedBlocks;
         }
