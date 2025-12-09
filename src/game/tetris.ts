@@ -239,6 +239,10 @@ export class TetrisGame {
 
     private _highscores: ScoreEntry[] = loadHighscores();
 
+    get highscores() {
+        return this._highscores;
+    }
+
     private _placedBlocks: PlacedBlocks = [];
 
     get placedBlocks() {
