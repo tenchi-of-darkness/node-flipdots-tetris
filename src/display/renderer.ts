@@ -8,6 +8,10 @@ import { LAYOUT } from "../config/index.js";
 import { drawText } from "./utils.js";
 import { StartScreenAnimator } from "./owow-animation.js";
 
+function textWidth(text: string): number {
+    return text.length * 6 - 1;
+}
+
 /**
  * The Renderer class is responsible for all drawing operations. It takes game state data
  * and renders it to an in-memory canvas. Depending on the mode (dev or prod),
@@ -29,6 +33,30 @@ export class Renderer {
         this.ctx = this.canvas.getContext("2d");
         this.startScreenAnimator = new StartScreenAnimator();
         this.initialize();
+    }
+
+    /**
+     * The main rendering function, called on every frame.
+     * @param gameData An array of game data objects, one for each active player.
+     */
+    public renderUnpaused(gameData: GameData[]) {
+        this.renderGame(gameData, false);
+        this.drawScores(gameData);
+        this.finalizeFrame();
+    }
+
+    public renderPaused(gameData: GameData[], pauseSelection: "restart" | "quit") {
+        this.renderGame(gameData, true);
+        this.drawPause(pauseSelection, gameData.length === 2);
+        this.finalizeFrame();
+    }
+
+    public getWidth(): number {
+        return this.display.width;
+    }
+
+    public getHeight(): number {
+        return this.display.height;
     }
 
     /**
@@ -57,7 +85,7 @@ export class Renderer {
      */
     private initialize() {
         if (!fs.existsSync(this.outputDir)) {
-            fs.mkdirSync(this.outputDir, { recursive: true });
+            fs.mkdirSync(this.outputDir, {recursive: true});
         }
 
 
@@ -65,15 +93,7 @@ export class Renderer {
         this.ctx.textBaseline = "top";
     }
 
-    /**
-     * Loads and registers all custom fonts from the /fonts directory.
-     */
-
-    /**
-     * The main rendering function, called on every frame.
-     * @param gameData An array of game data objects, one for each active player.
-     */
-    public render(gameData: GameData[]) {
+    private renderGame(gameData: GameData[], paused: boolean) {
         this.clearCanvas();
         this.prepareContext();
 
@@ -87,13 +107,16 @@ export class Renderer {
         // Draw each active game board.
         for (let i = 0; i < gameData.length; i++) {
             const boardX = 1 + i * 70;
-            this.drawBoard(gameData, boardX, i);
+            this.drawBoard(gameData, boardX, i, paused);
         }
+    }
 
-        // Draw the score display.
-        this.drawScores(gameData);
-
-        this.finalizeFrame();
+    private drawPause(pauseSelection: "restart" | "quit", isMultiplayer: boolean) {
+        if (isMultiplayer) {
+            this.drawTwoPlayerPauseMenu(pauseSelection);
+        } else {
+            this.drawSinglePauseMenu(pauseSelection);
+        }
     }
 
     private drawStartScreen(): void {
@@ -115,9 +138,10 @@ export class Renderer {
         this.ctx.strokeStyle = "#fff";
     }
 
-    private drawBoard(gameData: GameData[], boardX: number, i: number) {
+    private drawBoard(gameData: GameData[], boardX: number, i: number, paused: boolean) {
         if (gameData.length > 1) {
             if (gameData[0].gameOver && gameData[1].gameOver) {
+                if(paused) return;
                 if (i === 0) {
                     drawText(this.ctx, 'GAME', 30, 12);
                     drawText(this.ctx, 'OVER', 30, 20);
@@ -126,69 +150,115 @@ export class Renderer {
             }
         }
 
-            if (gameData[i].gameOver) {
-                if (gameData.length === 1) {
-                    drawText(this.ctx, 'GAME', 3, 8);
-                    drawText(this.ctx, 'OVER', 3, 16);
-                    return;
-                }
-                const textX = i === 0 ? 10 : 51;
-                const playerLabelX = i === 0 ? 16 : 57;
-                const player = i === 0 ? 'P1' : 'P2';
-                drawText(this.ctx, player, playerLabelX, 1);
-                drawText(this.ctx, 'GAME', textX, 8);
-                drawText(this.ctx, 'OVER', textX, 15);
+        if (gameData[i].gameOver) {
+            if (gameData.length === 1) {
+                drawText(this.ctx, 'GAME', 3, 8);
+                drawText(this.ctx, 'OVER', 3, 16);
                 return;
             }
+            
+            if(paused) return;
 
-        this.drawBoardOutline(this.ctx, boardX);
-        const { x, y, rotation, piece } = gameData[i].currentPiece;
-        this.drawMovingPiece(this.ctx, boardX, x, y, piece[rotation]);
-        this.drawPlacedBlocks(this.ctx, boardX, gameData[i].blockGrid);
+            const textX = i === 0 ? 10 : 51;
+            const playerLabelX = i === 0 ? 16 : 57;
+            const player = i === 0 ? 'P1' : 'P2';
+            drawText(this.ctx, player, playerLabelX, 1);
+            drawText(this.ctx, 'GAME', textX, 8);
+            drawText(this.ctx, 'OVER', textX, 15);
+            return;
+        }
 
-        if (gameData.length === 1) {
-            this.ctx.fillRect(boardX + 20, 0, 1, 8);
-            this.ctx.fillRect(boardX + 12, 8, 9, 1);
-            this.drawNextPiece(this.ctx, gameData[i].nextPiece, boardX + 15, 3); 
-        } else if (gameData.length === 2) {
-            if (i === 0) {
-                // this.ctx.fillRect(boardX + 20, 0, 1, 8);
-                this.drawNextPiece(this.ctx, gameData[i].nextPiece, boardX + 15, 2);
-            } else {
-                // this.ctx.fillRect(boardX - 1, 0, 1, 8);
-                this.drawNextPiece(this.ctx, gameData[i].nextPiece, boardX - 6, 2);
+        this.drawBoardOutline(boardX);
+        const {x, y, rotation, piece} = gameData[i].currentPiece;
+        this.drawMovingPiece(boardX, x, y, piece[rotation]);
+        this.drawPlacedBlocks(boardX, gameData[i].blockGrid);
+
+        // Only draw next piece if the game is NOT paused
+        if (!paused) {
+            if (gameData.length === 1) {
+                this.ctx.fillRect(boardX + 20, 0, 1, 8);
+                this.ctx.fillRect(boardX + 12, 8, 9, 1);
+                this.drawNextPiece(gameData[i].nextPiece, boardX + 15, 3);
+            } else if (gameData.length === 2) {
+                if (i === 0) {
+                    this.drawNextPiece(gameData[i].nextPiece, boardX + 15, 2);
+                } else {
+                    this.drawNextPiece(gameData[i].nextPiece, boardX - 6, 2);
+                }
             }
         }
     }
 
-
-    private drawBoardOutline(ctx: NodeCanvasContext, x: number) {
-        ctx.fillRect(x, 0, 12, 28);
-        ctx.clearRect(x + 1, 0, 10, 27);
+    private drawBoardOutline(x: number) {
+        this.ctx.fillRect(x, 0, 12, 28);
+        this.ctx.clearRect(x + 1, 0, 10, 27);
     }
 
-    private drawMovingPiece(ctx: NodeCanvasContext, boardX: number, x: number, y: number, pieceParts: {
+    private drawMovingPiece(boardX: number, x: number, y: number, pieceParts: {
         x: number,
         y: number
     }[]) {
         pieceParts.forEach((piece) => {
-            ctx.fillRect(boardX + x + 1 + piece.x, y + piece.y, 1, 1);
+            this.ctx.fillRect(boardX + x + 1 + piece.x, y + piece.y, 1, 1);
         });
     }
 
-    private drawNextPiece(ctx: NodeCanvasContext, nextPiece: { rotation: number, piece: any[][] }, x: number, y: number) {
-    const shape = nextPiece.piece[nextPiece.rotation];
+    private drawNextPiece(nextPiece: {
+        rotation: number,
+        piece: any[][]
+    }, x: number, y: number) {
+        const shape = nextPiece.piece[nextPiece.rotation];
 
-    shape.forEach(part => {
-        ctx.fillRect(x + part.x, y + part.y, 1, 1);
-    });
-}
-
-
-    private drawPlacedBlocks(ctx: NodeCanvasContext, boardX: number, blockGrid: any[]) {
-        blockGrid.forEach((block) => {
-            ctx.fillRect(boardX + 1 + block.x, block.y, 1, 1);
+        shape.forEach(part => {
+            this.ctx.fillRect(x + part.x, y + part.y, 1, 1);
         });
+    }
+
+    private drawPlacedBlocks(boardX: number, blockGrid: any[]) {
+        blockGrid.forEach((block) => {
+            this.ctx.fillRect(boardX + 1 + block.x, block.y, 1, 1);
+        });
+    }
+
+    private getPauseMenuData(pauseSelection: "restart" | "quit") {
+        const pauseText = "PAUSED";
+        const restartText = "RESTART";
+        const quitText = "QUIT";
+
+        const lines = [
+            pauseText,
+            `${pauseSelection === "restart" ? "-" : " "}${restartText}`,
+            `${pauseSelection === "quit" ? "-" : " "}${quitText}`,
+        ];
+
+        return {
+            lines: lines,
+            maxWidth: Math.max(...lines.map(textWidth))
+        };
+    }
+
+    private drawPauseMenuLines(lines: string[], startX: number, baseY: number) {
+        drawText(this.ctx, lines[0], startX, baseY);
+        drawText(this.ctx, lines[1], startX, baseY + 8);
+        drawText(this.ctx, lines[2], startX, baseY + 16);
+    }
+
+    private drawSinglePauseMenu(pauseSelection: "restart" | "quit") {
+        const data = this.getPauseMenuData(pauseSelection);
+
+        const startX = Math.floor((this.display.width - data.maxWidth) / 1.2);
+        const baseY = Math.floor(this.display.height / 2) - 10;
+
+        this.drawPauseMenuLines(data.lines, startX, baseY);
+    }
+
+    private drawTwoPlayerPauseMenu(pauseSelection: "restart" | "quit") {
+        const data = this.getPauseMenuData(pauseSelection);
+
+        const startX = Math.floor((this.display.width - data.maxWidth) / 2);
+        const baseY = 2;
+
+        this.drawPauseMenuLines(data.lines, startX, baseY);
     }
 
     private drawScores(gameData: GameData[]) {
@@ -312,13 +382,5 @@ export class Renderer {
         if (this.display.isDirty()) {
             this.display.flush();
         }
-    }
-
-    public getWidth(): number {
-        return this.display.width;
-    }
-
-    public getHeight(): number {
-        return this.display.height;
     }
 }

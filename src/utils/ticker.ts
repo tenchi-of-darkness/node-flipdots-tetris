@@ -1,4 +1,4 @@
-type TickerCallback =  ({ deltaTime, elapsedTime }: {deltaTime: number, elapsedTime: number}) => void;
+type TickerCallback = ({deltaTime, elapsedTime}: { deltaTime: number, elapsedTime: number }) => void;
 
 export class Ticker {
     private readonly fps: number;
@@ -6,45 +6,46 @@ export class Ticker {
     private isRunning: boolean;
     private lastFrameTime: number;
     private readonly frameInterval: number;
-	constructor(options = {fps: 60}) {
-		this.fps = options.fps;
-		this.callback = null;
-		this.isRunning = false;
-		this.lastFrameTime = 0;
-		this.frameInterval = 1000 / this.fps;
-	}
 
-	start(callback: ({ deltaTime, elapsedTime }: { deltaTime: number; elapsedTime: number; }) => void) {
-		if (this.isRunning) return;
+    constructor(options = {fps: 60}) {
+        this.fps = options.fps;
+        this.callback = null;
+        this.isRunning = false;
+        this.lastFrameTime = 0;
+        this.frameInterval = 1000 / this.fps;
+    }
 
-		this.callback = callback;
-		this.isRunning = true;
-		this.lastFrameTime = performance.now();
+    start(callback: ({deltaTime, elapsedTime}: { deltaTime: number; elapsedTime: number; }) => void) {
+        if (this.isRunning) return;
 
-		this._tick();
+        this.callback = callback;
+        this.isRunning = true;
+        this.lastFrameTime = performance.now();
 
-		return this;
-	}
+        this._tick();
 
-	_tick() {
-		if (!this.isRunning) return;
+        return this;
+    }
 
-		const now = performance.now();
-		const timeDelta = now - this.lastFrameTime;
+    _tick() {
+        if (!this.isRunning) return;
 
-		if (timeDelta >= this.frameInterval) {
-			this.lastFrameTime = now - (timeDelta % this.frameInterval);
+        const now = performance.now();
+        const timeDelta = now - this.lastFrameTime;
 
-			const normalizedDelta = timeDelta / this.frameInterval;
+        if (timeDelta >= this.frameInterval) {
+            this.lastFrameTime = now - (timeDelta % this.frameInterval);
 
-			if (this.callback) {
-				this.callback({
-					deltaTime: normalizedDelta,
-					elapsedTime: now,
-				});
-			}
-		}
+            const normalizedDelta = timeDelta / this.frameInterval;
 
-		setImmediate(() => this._tick());
-	}
+            if (this.callback) {
+                this.callback({
+                    deltaTime: normalizedDelta,
+                    elapsedTime: now,
+                });
+            }
+        }
+
+        setImmediate(() => this._tick());
+    }
 }
